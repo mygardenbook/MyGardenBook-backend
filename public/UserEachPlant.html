@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Plant Details</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Kalam:wght@700&display=swap" rel="stylesheet">
+
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Baloo 2', 'Kalam', 'Arial', sans-serif;
+    background: url('Bg.png') no-repeat center center fixed;
+    background-size: cover;
+    position: relative;
+    min-height: 100vh;
+  }
+
+  .overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(255,255,255,0.7);
+    z-index: 1;
+  }
+
+  .container {
+    position: relative;
+    z-index: 3;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .back-arrow {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 5;
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+  }
+
+  /* ---------- FLIP CARD ---------- */
+  .flip-card {
+    width: 70%;
+    max-width: 320px;
+    aspect-ratio: 4 / 3;
+    perspective: 1200px;
+    margin-top: 5rem;
+    cursor: pointer;
+    z-index: 3;
+  }
+
+  .flip-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.8s ease;
+    transform-style: preserve-3d;
+    border-radius: 20px;
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  .flip-card.flipped .flip-inner {
+    transform: rotateY(180deg);
+  }
+
+  .flip-front, .flip-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 20px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .flip-front {
+    background: rgba(143,216,113,0.6);
+  }
+
+  .flip-front img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 20px;
+  }
+
+  .flip-back {
+    background: rgba(143,216,113,0.4);
+    transform: rotateY(180deg);
+    flex-direction: column;
+    text-align: center;
+    color: #1f2715;
+    font-family: 'Baloo 2';
+    box-shadow: inset 0 0 25px rgba(102,160,58,0.3);
+  }
+
+  .qr-flip {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+    margin-bottom: 0.4rem;
+    border-radius: 12px;
+  }
+
+  .flip-back p {
+    font-size: 1.05rem;
+    margin: 0;
+  }
+
+  /* ---------- DETAILS ---------- */
+  .details {
+    width: 85%;
+    max-width: 420px;
+    color: #262A23;
+    font-size: 1.1rem;
+    margin-top: 1.5rem;
+  }
+
+  .description-label {
+    font-weight: bold;
+    margin-top: 1rem;
+  }
+
+  .green-box {
+    background: rgba(143, 216, 113, 0.4);
+    border-radius: 20px;
+    padding: 0.9rem 1rem;
+    margin-top: 0.5rem;
+    font-size: 1rem;
+    line-height: 1.4rem;
+    color: #1f2715;
+    font-family: 'Baloo 2';
+  }
+
+  /* ---------- ASK AI ---------- */
+  .ask-ai-section {
+    width: 85%;
+    max-width: 420px;
+    background: rgba(143, 216, 113, 0.3);
+    border-radius: 20px;
+    box-shadow: 0 2px 10px rgba(183,218,184,0.6);
+    padding: 1rem;
+    margin: 2rem 0 1rem 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .ask-ai-section textarea {
+    width: 100%;
+    border-radius: 12px;
+    border: none;
+    resize: none;
+    font-size: 1rem;
+    padding: 0.6rem;
+    font-family: 'Baloo 2';
+    outline: none;
+    margin-bottom: 0.8rem;
+    color: #262A23;
+    background: #fff;
+  }
+
+  .ask-ai-section button {
+    background: rgba(143, 216, 113, 0.5);
+    border: 3px solid #66A03A;
+    border-radius: 30px;
+    font-size: 1rem;
+    font-family: 'Baloo 2', 'Kalam', cursive;
+    padding: 0.4rem 1.4rem;
+    color: #262A23;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .ask-ai-section button:hover {
+    background: #b3e572;
+    color: #fff;
+  }
+
+  @media (max-width: 600px) {
+    .flip-card { width: 85%; margin-top: 4.5rem; }
+    .details { font-size: 1rem; width: 90%; }
+    .green-box { font-size: 0.9rem; }
+    .ask-ai-section { width: 90%; }
+  }
+</style>
+</head>
+
+<body>
+  <div class="overlay"></div>
+
+  <button class="back-arrow" onclick="window.location.href='UserPlants.html'" aria-label="Go back">
+    <svg viewBox="0 0 30 30" width="100%" height="100%">
+      <polyline points="20,6 10,15 20,24"
+                fill="none" stroke="#262A23"
+                stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <div class="container">
+    <!-- Flip Card (Image + QR) -->
+    <div class="flip-card" id="flipCard">
+      <div class="flip-inner">
+        <div class="flip-front">
+          <img id="plantImage" src="plant_sample.jpg" alt="Plant Image">
+        </div>
+        <div class="flip-back">
+          <img id="plantQR" src="qr_placeholder.png" alt="QR Code" class="qr-flip">
+          <p>Scan Me!</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="details">
+      <p><strong>Scientific name:</strong> <span id="scientificName">Loading...</span></p>
+      <p><strong>Common name:</strong> <span id="commonName">Loading...</span></p>
+      <p><strong>Category:</strong> <span id="category">Loading...</span></p>
+      <p class="description-label">Description:</p>
+      <div class="green-box" id="description">Loading plant description...</div>
+    </div>
+
+    <!-- Ask AI Section -->
+    <div class="ai-section">
+  <label>Ask AI</label>
+  <textarea id="aiQuestion" placeholder="Ask something..."></textarea>
+  <button class ="btn"  onclick="handleUniversalAI()">Chat with AI</button>
+  <div id="aiResponse" style="display:flex; flex-direction:column; background:#f5f5f5; padding:1rem; border-radius:10px; max-height:200px; overflow-y:auto;"></div>
+</div>
+
+
+  <script>
+    const API_BASE = "http://localhost:5000";
+    const params = new URLSearchParams(window.location.search);
+    const plantId = params.get("id");
+
+    const imageEl = document.getElementById("plantImage");
+    const qrEl = document.getElementById("plantQR");
+    const sciEl = document.getElementById("scientificName");
+    const commonEl = document.getElementById("commonName");
+    const catEl = document.getElementById("category");
+    const descEl = document.getElementById("description");
+
+    async function loadPlant() {
+      try {
+        const res = await fetch(`${API_BASE}/api/plants/${plantId}`);
+        if (!res.ok) throw new Error("Failed to load plant");
+        const plant = await res.json();
+
+        sciEl.textContent = plant.scientificName || "Not available";
+        commonEl.textContent = plant.name || "Unknown";
+        catEl.textContent = plant.category || "Uncategorized";
+        descEl.textContent = plant.description || "No description available.";
+        imageEl.src = plant.image || "plant_sample.jpg";
+        qrEl.src = plant.qrCode || "qr_placeholder.png";
+      } catch (err) {
+        console.error("Error fetching plant details:", err);
+        sciEl.textContent = "Error loading data";
+        descEl.textContent = "Please try again later.";
+      }
+    }
+
+    // Flip card behavior
+    const flipCard = document.getElementById("flipCard");
+    flipCard.addEventListener("click", () => {
+      flipCard.classList.toggle("flipped");
+    });
+    
+    function askAI() {
+      const q = document.getElementById('aiQuestion').value.trim();
+      const box = document.getElementById('aiResponse');
+      if (!q) return;
+      const user = document.createElement('div');
+      user.textContent = 'You: ' + q;
+      const ai = document.createElement('div');
+      ai.textContent = 'AI: (placeholder) I’ll give info about ' + q + ' soon!';
+      ai.style.marginTop = '0.3rem';
+      box.appendChild(user);
+      box.appendChild(ai);
+      box.scrollTop = box.scrollHeight;
+      document.getElementById('aiQuestion').value = '';
+    }
+    loadPlant();
+  </script>
+    <script src="/js/chat.js"></script>
+
+</body>
+</html>

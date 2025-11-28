@@ -1,0 +1,6 @@
+{
+  "staticIP": "192.168.1.5",
+  "internalPort": 3000,
+  "externalPort": 8080,
+  "publicIP": "123.45.67.89"
+}

@@ -1,0 +1,53 @@
+{
+  "project": "MyGardenBook",
+  "description": "A complete plant and fish management website with Admin and User interfaces, AI integration, and responsive UI.",
+  "structure": {
+    "root_files": [
+      "Home.html",
+      "Login.html"
+    ],
+    "admin_pages": [
+      "Admin.html",
+      "AdminPlants.html",
+      "AdminFishes.html",
+      "AdminPlantCategories.html",
+      "AdminFishCategories.html",
+      "AdminEachPlantCategory.html",
+      "AdminEachFishCategory.html",
+      "AdminAddPlant.html",
+      "AdminAddFish.html"
+    ],
+    "user_pages": [
+      "User.html",
+      "UserPlants.html",
+      "UserFishes.html",
+      "UserPlantCategories.html",
+      "UserFishCategories.html",
+      "UserEachPlantCategory.html",
+      "UserEachFishCategory.html",
+      "UserEachPlant.html",
+      "UserEachFish.html"
+    ],
+    "common_assets": [
+      "Bg.png",
+      "qr_placeholder.png",
+      "ai_icon.png",
+      "images/ (tulsi.jpg, neem.jpg, rose.jpg, mango.jpg, goldfish.jpg, betta.jpg, guppy.jpg, clownfish.jpg)",
+      "data.json (planned dynamic content)",
+      "categories.json (auto-generated list of categories)"
+    ],
+    "shared_style": {
+      "fonts": [
+        "Baloo 2",
+        "Kalam"
+      ],
+      "colors": {
+        "overlay": "rgba(255,255,255,0.7)",
+        "green_tint": "rgba(143,216,113,0.5)",
+        "border": "#66A03A"
+      },
+      "buttons": "Rounded 30px, hover \u2192 lighter green + white text",
+      "back_arrow": "Fixed top-left, uniform size across all pages"
+    }
+  }
+}

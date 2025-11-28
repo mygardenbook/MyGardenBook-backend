@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Page</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Kalam:wght@700&display=swap" rel="stylesheet">
+  <style>
+    /* Reset and font setup */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      font-family: 'Baloo 2','Kalam','Arial',sans-serif;
+      overflow: hidden;
+    }
+
+    /* Match admin visual background overlay */
+    .background-overlay {
+      position: fixed;
+      z-index: 0;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      background: url('Bg.png') no-repeat center center fixed;
+      background-size: cover;
+    }
+    .background-overlay::after {
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      background: #fff;
+      opacity: 0.7;
+      z-index: 1;
+    }
+
+    /* Consistent back-arrow styling */
+    .back-arrow {
+      position: absolute;
+      top: 1.8rem;
+      left: 2rem;
+      z-index: 3;
+      cursor: pointer;
+      background: none;
+      border: none;
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .back-arrow svg polyline {
+      stroke: black;
+      stroke-width: 4;
+    }
+
+    /* Container */
+    .container {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      width: 100vw;
+      flex-direction: column;
+      text-align: center;
+    }
+
+    /* Button group */
+    .buttons-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2.2rem;
+    }
+
+    /* Menu buttons — perfectly match admin button style */
+    .menu-btn {
+      background: #BFE7BC;
+      border: none;
+      border-radius: 20px;
+      font-size: 1.3rem;
+      color: #262A23;
+      font-family: 'Baloo 2','Kalam',cursive,sans-serif;
+      min-width: 280px;
+      padding: 1rem 2rem;
+      text-align: center;
+      outline: none;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.15s ease;
+      box-shadow: 0 6px 18px #bfbfbf41;
+    }
+
+    .menu-btn:hover {
+      background: #b3e572;
+      transform: scale(1.03);
+    }
+
+    @media (max-width: 600px) {
+      .menu-btn {
+        font-size: 1.05rem;
+        min-width: 80vw;
+        padding: 0.8rem;
+      }
+      .buttons-group { gap: 1.3rem; }
+      .back-arrow {
+        width: 28px;
+        height: 28px;
+        top: 1rem;
+        left: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="background-overlay"></div>
+
+  <button class="back-arrow" onclick="window.location.href='Login.html'" aria-label="Go back">
+    <svg viewBox="0 0 30 30" width="100%" height="100%">
+      <polyline points="20,6 10,15 20,24" fill="none" stroke="black" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <div class="container">
+    <div class="buttons-group">
+      <button class="menu-btn" onclick="window.location.href='UserPlants.html'">Plants</button>
+      <button class="menu-btn" onclick="window.location.href='UserFishes.html'">Fishes</button>
+    </div>
+  </div>
+
+  <script src="scripts/session.js"></script>
+  <script>
+    checkSession("user"); // only user can open
+  </script>
+</body>
+</html>

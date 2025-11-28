@@ -1,0 +1,6 @@
+node_modules/
+server/uploads/
+data/
+.env
+*.log
+.tmp/

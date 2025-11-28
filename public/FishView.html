@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plant View</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Kalam:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Baloo 2','Kalam',sans-serif;
+      background: url('Bg.png') no-repeat center center fixed;
+      background-size: cover;
+      position: relative;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(255,255,255,0.7);
+      z-index: 0;
+    }
+
+    .nav-row { position: relative; z-index: 2; width: 96vw; max-width: 860px; margin: 1.2rem auto; display: flex; justify-content: flex-start; align-items: center; }
+    .back-arrow { background: none; border: none; cursor: pointer; width: 38px; height: 38px; display: flex; align-items: center; }
+    .back-arrow svg polyline { stroke: #262A23; stroke-width: 4; }
+
+    .card {
+      position: relative;
+      z-index: 2;
+      background: rgba(255,255,255,0.9);
+      width: 90%;
+      max-width: 600px;
+      margin: 1rem auto 2rem auto;
+      border-radius: 20px;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      align-items: center;
+      text-align: center;
+    }
+
+    .plant-img { width: 180px; height: 180px; border-radius: 20px; object-fit: cover; border: 3px solid #66A03A; background: #dff0d8; }
+    .plant-name { font-size: 1.5rem; color: #1A2B10; }
+    .sci-name { font-size: 1.1rem; color: #4A771C; }
+    .category { font-size: 1rem; background: #A6DEAA; padding: 0.3rem 1rem; border-radius: 20px; font-weight: bold; color: #262A23; }
+    .description { font-size: 1rem; color: #333; line-height: 1.5; margin-top: 0.6rem; white-space: pre-wrap; }
+
+    .qr-section { margin-top: 1.5rem; display: flex; flex-direction: column; align-items: center; }
+    .qr-section img { width: 140px; height: 140px; border: 2px solid #4A771C; border-radius: 12px; background: #f6fff4; }
+
+    .ai-section { margin-top: 1rem; }
+    .ai-box { background: #f5f5f5; border-radius: 12px; padding: 1rem; margin-top: 0.5rem; max-height: 200px; overflow-y: auto; }
+    .login-prompt { font-size: 1rem; color: #333; text-align: center; margin-top: 1rem; line-height: 1.4; }
+
+    @media (max-width: 600px) {
+      .card { padding: 1.2rem; }
+      .plant-img { width: 150px; height: 150px; }
+      .plant-name { font-size: 1.3rem; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="nav-row">
+    <button class="back-arrow" id="backBtn">
+      <svg viewBox="0 0 30 30" width="100%" height="100%">
+        <polyline points="20,6 10,15 20,24" fill="none" stroke="#262A23" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="card" id="plantCard">
+    <p>Loading plant details...</p>
+  </div>
+
+  <div class="ai-section">
+  <label>Ask AI</label>
+  <textarea id="aiQuestion" placeholder="Ask something..."></textarea>
+  <button onclick="handleUniversalAI()">Chat with AI</button>
+  <div id="aiResponse" style="display:flex; flex-direction:column; background:#f5f5f5; padding:1rem; border-radius:10px; max-height:200px; overflow-y:auto;"></div>
+</div>
+
+
+  <script>
+    const API_BASE = window.location.origin;
+    const plantId = window.location.pathname.split("/").pop();
+    const role = localStorage.getItem("role");
+
+    // 🔙 Back button
+    document.getElementById("backBtn").addEventListener("click", () => {
+      if (!role) window.location.href = "Login.html";
+      else if (role === "admin") window.location.href = "AdminPlants.html";
+      else window.location.href = "UserPlants.html";
+    });
+
+    // 🌿 Load Plant Details
+    async function loadPlant() {
+      const card = document.getElementById("plantCard");
+      if (!plantId || isNaN(plantId)) {
+        card.innerHTML = "<p style='color:red;'>⚠️ Invalid or missing plant ID.</p>";
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/plants/${plantId}`);
+        if (!res.ok) throw new Error("Plant not found");
+        const plant = await res.json();
+
+        card.innerHTML = `
+          <img src="${plant.image ? API_BASE + plant.image : '/images/placeholder.jpg'}" class="plant-img" alt="${plant.name || 'Plant'}">
+          <div class="plant-name">${plant.name || "Unnamed Plant"}</div>
+          <div class="sci-name"><i>${plant.scientificName || ""}</i></div>
+          <div class="category">${plant.category || "Uncategorized"}</div>
+          <div class="description">${plant.description || "No description available."}</div>
+          <div class="qr-section">
+            <label>Scan QR to revisit:</label>
+            <img src="${plant.qrCode ? API_BASE + plant.qrCode : '/images/qr_placeholder.png'}" alt="QR Code for ${plant.name || 'Plant'}">
+          </div>
+          ${!role ? `<div class="login-prompt">👋 You’re viewing this plant as a guest.<br>Log in to explore more!</div>` : ""}
+        `;
+      } catch (error) {
+        console.error(error);
+        card.innerHTML = "<p style='color:red;'>Failed to load plant details.</p>";
+      }
+    }
+
+    async function askAI() {
+  const q = document.getElementById("aiQuestion").value.trim();
+  const box = document.getElementById("aiResponse");
+  if (!q) return;
+
+  const user = document.createElement("div");
+  user.textContent = "You: " + q;
+  box.appendChild(user);
+
+  const ai = document.createElement("div");
+  ai.textContent = "AI: Thinking...";
+  ai.style.marginTop = "0.3rem";
+  box.appendChild(ai);
+  box.scrollTop = box.scrollHeight;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/ask-ai`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: q }),
+    });
+
+    const data = await res.json();
+    ai.textContent = data.answer || "AI could not generate an answer.";
+  } catch (err) {
+    console.error("AI error:", err);
+    ai.textContent = "Error: Could not connect to AI service.";
+  }
+
+  document.getElementById("aiQuestion").value = "";
+  box.scrollTop = box.scrollHeight;
+}
+
+
+    loadPlant();
+  </script>
+  <script src="js/chat.js"></script>
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Fishes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Kalam:wght@700&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0; padding: 0; width: 100%; min-height: 100vh;
+      font-family: 'Baloo 2','Kalam','Arial',sans-serif;
+      background: none; overflow-x: hidden; box-sizing: border-box;
+    }
+    body { position: relative; z-index: 0; }
+    .background-overlay {
+      position: fixed; z-index: 0; width: 100%; height: 100%; top: 0; left: 0;
+      background: url('Bg.png') no-repeat center center fixed;
+      background-size: cover;
+    }
+    .background-overlay::after {
+      content: ""; position: absolute; width: 100%; height: 100%;
+      top: 0; left: 0; background: #fff; opacity: 0.7; z-index: 1;
+    }
+
+    .content {
+      position: relative; z-index: 2; width: 100%; min-height: 100vh;
+      padding-top: 3.5rem; display: flex; flex-direction: column; align-items: center;
+    }
+
+    .nav-row {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      width: 94%; max-width: 860px;
+    }
+    .back-arrow {
+      background: none; border: none; cursor: pointer;
+      width: 34px; height: 34px; display: flex; align-items: center;
+    }
+    .back-arrow svg polyline { stroke: black; stroke-width: 4; }
+
+    .plants-btn, .action-btn {
+      background: #BFE7BC; border: none; border-radius: 20px;
+      font-size: 1.05rem; color: #262A23; font-weight: bold;
+      font-family: 'Baloo 2','Kalam',cursive,sans-serif;
+      padding: 0.7rem 1.3rem; cursor: pointer; transition: background 0.2s ease;
+      white-space: nowrap;
+    }
+    .plants-btn:hover, .action-btn:hover {
+      background: #b3e572; color: #262A23;
+    }
+
+    .actions-row {
+      display: flex; justify-content: center; align-items: center;
+      gap: 0.6rem; flex-wrap: wrap; width: 94%; max-width: 860px;
+      margin: 2.4rem 0 1.3rem 0;
+    }
+
+    .search-bar-wrap {
+      width: 100%; display: flex; justify-content: center; margin: 1.2rem 0 2rem 0;
+    }
+    .search-bar {
+      display: flex; align-items: center; background: #fff; border-radius: 30px;
+      box-shadow: 0 6px 18px #bfbfbf41; padding: 0 1rem; width: 90%; max-width: 650px; height: 45px;
+    }
+    .search-bar input {
+      width: 90%; border: none; outline: none; font-size: 1rem;
+      background: transparent; margin-left: 10px; color: #222; font-family: inherit;
+    }
+    .search-bar input::placeholder { color: #376325b0; font-size: 1rem; }
+
+    .search-icon { width: 1.8rem; height: 1.8rem; color: #4A771C; }
+
+    .fish-list {
+      display: grid; grid-template-columns: repeat(2,1fr);
+      justify-content: center; align-items: start; gap: 1rem;
+      width: 90%; max-width: 650px; margin-bottom: 3rem;
+    }
+    .fish-card {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: #BFE7BC; border-radius: 20px; padding: 0.7rem; height: 130px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1); cursor: pointer;
+      transition: transform 0.15s ease, background 0.2s ease;
+    }
+    .fish-card:hover { transform: scale(1.03); }
+    .fish-card.selected { outline: 3px solid #4A771C; background: #aee6a8; }
+
+    .fish-img {
+      width: 50px; height: 50px; border-radius: 12px;
+      border: 2px solid #4A771C; background: #fff; object-fit: cover;
+    }
+    .fish-name {
+      font-size: 1rem; font-family: 'Baloo 2','Kalam',cursive,sans-serif;
+      color: #1A2B10; margin-top: 0.5rem; text-align: center;
+    }
+
+    @media (max-width:600px) {
+      .fish-list{grid-template-columns:1fr 1fr;gap:0.7rem;}
+      .fish-card{height:110px;border-radius:16px;}
+      .fish-img{width:42px;height:42px;}
+      .fish-name{font-size:0.9rem;}
+      .actions-row{gap:0.4rem;}
+      .action-btn,.plants-btn{font-size:0.95rem;padding:0.5rem 1rem;}
+    }
+
+    .status-msg {
+      font-size: 0.95rem; color: #2e7d32;
+      margin-bottom: 1rem; text-align: center; min-height: 1em;
+    }
+  </style>
+</head>
+<body>
+  <div class="background-overlay"></div>
+  <div class="content">
+    <div class="nav-row">
+      <button class="back-arrow" onclick="window.location.href='Admin.html'">
+        <svg viewBox="0 0 30 30" width="100%" height="100%">
+          <polyline points="20,6 10,15 20,24" fill="none" stroke="black"
+                    stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="plants-btn" onclick="window.location.href='AdminPlants.html'">Plants</button>
+    </div>
+
+    <div class="actions-row">
+      <button class="action-btn" onclick="window.location.href='AdminFishCategories.html'">Categories</button>
+      <button class="action-btn" onclick="window.location.href='AdminAddEditFish.html'">Add Fish</button>
+      <button class="action-btn" id="deleteBtn">Delete Fish</button>
+    </div>
+
+    <div id="statusMsg" class="status-msg"></div>
+
+    <div class="search-bar-wrap">
+      <div class="search-bar">
+        <svg class="search-icon" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="7" stroke="#4A771C" stroke-width="2" fill="none"/>
+          <line x1="18" y1="18" x2="15.6" y2="15.6" stroke="#4A771C" stroke-width="2" />
+        </svg>
+        <input type="text" id="fishSearch" placeholder="Search by fish name or category..." oninput="filterFishes()" autocomplete="off" />
+      </div>
+    </div>
+
+    <div class="fish-list" id="fishList"></div>
+  </div>
+
+  <script>
+    const API_BASE = "http://localhost:5000";
+    let deleteMode = false;
+    let selectedFishes = [];
+    const statusMsg = document.getElementById("statusMsg");
+
+    function showMessage(msg, type = "success") {
+      statusMsg.textContent = msg;
+      statusMsg.style.color = type === "error" ? "#b22222" : "#2e7d32";
+      setTimeout(() => (statusMsg.textContent = ""), 2500);
+    }
+
+    // 🐟 Load all fishes
+    async function loadFishes() {
+      try {
+        const res = await fetch(`${API_BASE}/api/fishes`);
+        if (!res.ok) throw new Error("Failed to load fishes");
+        const fishes = await res.json();
+        renderFishes(fishes);
+      } catch (err) {
+        console.error("Error loading fishes:", err);
+        showMessage("Error loading fishes", "error");
+      }
+    }
+
+    // 🧩 Render fish cards
+    function renderFishes(fishes) {
+      const list = document.getElementById("fishList");
+      list.innerHTML = "";
+
+      if (!fishes || fishes.length === 0) {
+        list.innerHTML = "<p style='text-align:center; color:#3b3b3b;'>No fishes added yet.</p>";
+        return;
+      }
+
+      fishes.forEach(f => {
+        const card = document.createElement("div");
+        card.className = "fish-card";
+        card.dataset.id = f.id;
+        card.dataset.category = f.category || "";
+        card.innerHTML = `
+          <img src="${f.image || 'placeholder.jpg'}" class="fish-img" alt="${f.name}">
+          <div class="fish-name">${f.name}</div>
+        `;
+        card.onclick = () => handleCardClick(f.id, card);
+        list.appendChild(card);
+      });
+    }
+
+    // 🐠 Handle edit/delete modes
+    function handleCardClick(id, card) {
+      if (deleteMode) {
+        card.classList.toggle("selected");
+        if (selectedFishes.includes(id)) {
+          selectedFishes = selectedFishes.filter(x => x !== id);
+        } else {
+          selectedFishes.push(id);
+        }
+      } else {
+        window.location.href = `AdminAddEditFish.html?id=${id}`;
+      }
+    }
+
+    // 🗑 Toggle and delete selected
+    async function toggleDeleteMode() {
+      const btn = document.getElementById("deleteBtn");
+
+      if (!deleteMode) {
+        deleteMode = true;
+        selectedFishes = [];
+        btn.style.background = "#E57373";
+        btn.textContent = "Confirm Delete";
+        showMessage("Tap fishes to select for deletion", "info");
+        return;
+      }
+
+      if (selectedFishes.length === 0) {
+        showMessage("No fishes selected", "error");
+        resetDeleteButton();
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/fishes`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: selectedFishes }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showMessage("✅ Deleted successfully!");
+          loadFishes();
+        } else {
+          showMessage("❌ Failed to delete", "error");
+        }
+      } catch (err) {
+        console.error("Error deleting fishes:", err);
+        showMessage("❌ Error deleting fishes", "error");
+      }
+
+      resetDeleteButton();
+    }
+
+    function resetDeleteButton() {
+      deleteMode = false;
+      selectedFishes = [];
+      const btn = document.getElementById("deleteBtn");
+      btn.style.background = "#BFE7BC";
+      btn.textContent = "Delete Fish";
+    }
+
+    document.getElementById("deleteBtn").addEventListener("click", toggleDeleteMode);
+
+    // 🔍 Filter fishes
+    function filterFishes() {
+      const input = document.getElementById("fishSearch").value.toLowerCase();
+      const cards = document.querySelectorAll(".fish-card");
+      cards.forEach(card => {
+        const name = card.querySelector(".fish-name").textContent.toLowerCase();
+        const category = (card.dataset.category || "").toLowerCase();
+        card.style.display = (name.includes(input) || category.includes(input)) ? "" : "none";
+      });
+    }
+
+    // 🟢 Initialize
+    loadFishes();
+  </script>
+</body>
+</html>

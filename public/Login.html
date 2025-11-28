@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login | MyGardenBook</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Kalam:wght@700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: 'Baloo 2','Kalam','Arial',sans-serif;
+      background: url('Bg.png') no-repeat center center fixed;
+      background-size: cover;
+      position: relative;
+      overflow: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(255,255,255,0.7);
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+    }
+
+    .title {
+      font-size: 2.4rem;
+      font-family: 'Kalam', cursive;
+      color: #4A771C;
+      text-shadow: 1px 1px 0 #fff, 2px 2px 8px #a0b38a57;
+      font-weight: bold;
+      margin-bottom: 1.8rem;
+    }
+
+    .login-box {
+      background: rgba(143, 216, 113, 0.5);
+      border-radius: 20px;
+      box-shadow: 0 4px 20px 2px #B7DAB8;
+      padding: 2.2rem 2.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.2rem;
+      min-width: 300px;
+    }
+
+    .input-group { position: relative; width: 100%; }
+
+    input {
+      width: 100%;
+      border: none;
+      border-radius: 20px;
+      padding: 0.8rem 2.8rem 0.8rem 1rem;
+      font-size: 1.1rem;
+      background: rgba(255,255,255,0.9);
+      color: #262A23;
+      font-family: 'Baloo 2', sans-serif;
+      outline: none;
+    }
+    input::placeholder { color: #4A771Caa; }
+
+    .eye-icon {
+      position: absolute;
+      top: 50%; right: 1rem;
+      transform: translateY(-50%);
+      cursor: pointer;
+      width: 22px; height: 22px;
+      stroke: #4A771C;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+    .eye-icon:hover { opacity: 1; }
+
+    .login-btn {
+      background: #BFE7BC;
+      color: #262A23;
+      border: none;
+      border-radius: 20px;
+      padding: 0.9rem 2.2rem;
+      font-size: 1.25rem;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s ease;
+      min-width: 150px;
+    }
+    .login-btn:hover { background: #b3e572; color: #fff; transform: translateY(-2px); }
+
+    .error-msg {
+      color: #b22222;
+      font-size: 0.95rem;
+      font-weight: bold;
+      min-height: 1.2rem;
+      margin-top: 0.5rem;
+      transition: opacity 0.3s ease;
+    }
+
+    @media (max-width: 600px) {
+      .login-box { padding: 1.8rem 1.8rem; width: 85%; }
+      .title { font-size: 2rem; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="title">Login</div>
+    <div class="login-box">
+      <div class="input-group">
+        <input type="text" id="username" placeholder="Username" autocomplete="off" />
+      </div>
+      <div class="input-group">
+        <input type="password" id="password" placeholder="Password" autocomplete="off" />
+        <svg id="togglePassword" class="eye-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+      </div>
+      <button id="loginBtn" class="login-btn">Login</button>
+      <div id="errorMsg" class="error-msg"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "http://localhost:5000";
+
+    const usernameEl = document.getElementById("username");
+    const passwordEl = document.getElementById("password");
+    const togglePassword = document.getElementById("togglePassword");
+    const loginBtn = document.getElementById("loginBtn");
+    const errorMsg = document.getElementById("errorMsg");
+
+    // 👁 Toggle password visibility
+    togglePassword.addEventListener("click", () => {
+      const isPassword = passwordEl.type === "password";
+      passwordEl.type = isPassword ? "text" : "password";
+      togglePassword.innerHTML = isPassword
+        ? '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a20.07 20.07 0 0 1 5.06-5.94M1 1l22 22"/>'
+        : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+    });
+
+    // 🚀 Handle login
+    loginBtn.addEventListener("click", async () => {
+      const username = usernameEl.value.trim();
+      const password = passwordEl.value.trim();
+
+      if (!username || !password) {
+        errorMsg.textContent = "Please enter username and password.";
+        return;
+      }
+
+      errorMsg.textContent = "Checking credentials...";
+
+      try {
+        const res = await fetch(`${API_BASE}/api/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          localStorage.setItem("username", username);
+          localStorage.setItem("role", data.role);
+
+          errorMsg.style.color = "#2e7d32";
+          errorMsg.textContent = "✅ Login successful! Redirecting...";
+
+          setTimeout(() => {
+            if (data.role === "admin") {
+              window.location.href = "Admin.html";
+            } else {
+              window.location.href = "User.html"; // placeholder
+            }
+          }, 1000);
+        } else {
+          errorMsg.textContent = "❌ Invalid username or password.";
+        }
+      } catch (err) {
+        console.error("Login error:", err);
+        errorMsg.textContent = "❌ Server error. Please try again later.";
+      }
+    });
+
+    // Press Enter to login
+    document.addEventListener("keydown", e => {
+      if (e.key === "Enter") loginBtn.click();
+    });
+  </script>
+</body>
+</html>
