@@ -141,132 +141,134 @@
     <div class="fish-list" id="fishList"></div>
   </div>
 
-  <script>
-    const API_BASE = "http://localhost:5000";
-    let deleteMode = false;
-    let selectedFishes = [];
-    const statusMsg = document.getElementById("statusMsg");
+ <script>
+  const API_BASE = "https://mygardenbook-backend.onrender.com";
+  let deleteMode = false;
+  let selectedFishId = null;
 
-    function showMessage(msg, type = "success") {
-      statusMsg.textContent = msg;
-      statusMsg.style.color = type === "error" ? "#b22222" : "#2e7d32";
-      setTimeout(() => (statusMsg.textContent = ""), 2500);
+  const statusMsg = document.getElementById("statusMsg");
+
+  function showMessage(msg, type = "success") {
+    statusMsg.textContent = msg;
+    statusMsg.style.color = type === "error" ? "#b22222" : "#2e7d32";
+    setTimeout(() => (statusMsg.textContent = ""), 2500);
+  }
+
+  // 🐟 Load all fish
+  async function loadFishes() {
+    try {
+      const res = await fetch(`${API_BASE}/api/fish`);
+      const fishes = await res.json();
+      renderFishes(fishes);
+    } catch (err) {
+      console.error("Error loading fish:", err);
+      showMessage("Error loading fish", "error");
+    }
+  }
+
+  // 🐠 Render fish cards
+  function renderFishes(fishes) {
+    const list = document.getElementById("fishList");
+    list.innerHTML = "";
+
+    if (!fishes || fishes.length === 0) {
+      list.innerHTML = "<p style='text-align:center; color:#3b3b3b;'>No fish added yet.</p>";
+      return;
     }
 
-    // 🐟 Load all fishes
-    async function loadFishes() {
-      try {
-        const res = await fetch(`${API_BASE}/api/fishes`);
-        if (!res.ok) throw new Error("Failed to load fishes");
-        const fishes = await res.json();
-        renderFishes(fishes);
-      } catch (err) {
-        console.error("Error loading fishes:", err);
-        showMessage("Error loading fishes", "error");
-      }
+    fishes.forEach(f => {
+      const card = document.createElement("div");
+      card.className = "fish-card";
+      card.dataset.id = f.id;
+      card.dataset.category = f.category || "";
+
+      card.innerHTML = `
+        <img src="${f.image_url || 'placeholder.jpg'}" class="fish-img" alt="${f.name}">
+        <div class="fish-name">${f.name}</div>
+      `;
+
+      card.onclick = () => handleCardClick(f.id, card);
+      list.appendChild(card);
+    });
+  }
+
+  // Handle click
+  function handleCardClick(id, card) {
+    if (!deleteMode) {
+      window.location.href = `AdminAddEditFish.html?id=${id}`;
+      return;
     }
 
-    // 🧩 Render fish cards
-    function renderFishes(fishes) {
-      const list = document.getElementById("fishList");
-      list.innerHTML = "";
+    document.querySelectorAll(".fish-card").forEach(c => c.classList.remove("selected"));
+    card.classList.add("selected");
+    selectedFishId = id;
+  }
 
-      if (!fishes || fishes.length === 0) {
-        list.innerHTML = "<p style='text-align:center; color:#3b3b3b;'>No fishes added yet.</p>";
-        return;
-      }
+  // Delete fish
+  async function toggleDeleteMode() {
+    const btn = document.getElementById("deleteBtn");
 
-      fishes.forEach(f => {
-        const card = document.createElement("div");
-        card.className = "fish-card";
-        card.dataset.id = f.id;
-        card.dataset.category = f.category || "";
-        card.innerHTML = `
-          <img src="${f.image || 'placeholder.jpg'}" class="fish-img" alt="${f.name}">
-          <div class="fish-name">${f.name}</div>
-        `;
-        card.onclick = () => handleCardClick(f.id, card);
-        list.appendChild(card);
+    if (!deleteMode) {
+      deleteMode = true;
+      selectedFishId = null;
+      btn.style.background = "#E57373";
+      btn.textContent = "Confirm Delete";
+      showMessage("Tap a fish to delete", "info");
+      return;
+    }
+
+    if (!selectedFishId) {
+      showMessage("No fish selected", "error");
+      resetDeleteMode();
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/fish/${selectedFishId}/delete`, {
+        method: "DELETE"
       });
-    }
 
-    // 🐠 Handle edit/delete modes
-    function handleCardClick(id, card) {
-      if (deleteMode) {
-        card.classList.toggle("selected");
-        if (selectedFishes.includes(id)) {
-          selectedFishes = selectedFishes.filter(x => x !== id);
-        } else {
-          selectedFishes.push(id);
-        }
+      if (res.ok) {
+        showMessage("Fish deleted successfully", "success");
+        loadFishes();
       } else {
-        window.location.href = `AdminAddEditFish.html?id=${id}`;
+        showMessage("Failed to delete fish", "error");
       }
+    } catch (err) {
+      console.error("Error deleting fish:", err);
+      showMessage("Error deleting fish", "error");
     }
 
-    // 🗑 Toggle and delete selected
-    async function toggleDeleteMode() {
-      const btn = document.getElementById("deleteBtn");
+    resetDeleteMode();
+  }
 
-      if (!deleteMode) {
-        deleteMode = true;
-        selectedFishes = [];
-        btn.style.background = "#E57373";
-        btn.textContent = "Confirm Delete";
-        showMessage("Tap fishes to select for deletion", "info");
-        return;
-      }
+  function resetDeleteMode() {
+    deleteMode = false;
+    selectedFishId = null;
 
-      if (selectedFishes.length === 0) {
-        showMessage("No fishes selected", "error");
-        resetDeleteButton();
-        return;
-      }
+    const btn = document.getElementById("deleteBtn");
+    btn.style.background = "#BFE7BC";
+    btn.textContent = "Delete Fish";
 
-      try {
-        const res = await fetch(`${API_BASE}/api/fishes`, {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ids: selectedFishes }),
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          showMessage("✅ Deleted successfully!");
-          loadFishes();
-        } else {
-          showMessage("❌ Failed to delete", "error");
-        }
-      } catch (err) {
-        console.error("Error deleting fishes:", err);
-        showMessage("❌ Error deleting fishes", "error");
-      }
+    document.querySelectorAll(".fish-card").forEach(c => c.classList.remove("selected"));
+  }
 
-      resetDeleteButton();
-    }
+  document.getElementById("deleteBtn").addEventListener("click", toggleDeleteMode);
 
-    function resetDeleteButton() {
-      deleteMode = false;
-      selectedFishes = [];
-      const btn = document.getElementById("deleteBtn");
-      btn.style.background = "#BFE7BC";
-      btn.textContent = "Delete Fish";
-    }
+  // Search filter
+  function filterFishes() {
+    const input = document.getElementById("fishSearch").value.toLowerCase();
+    const cards = document.querySelectorAll(".fish-card");
 
-    document.getElementById("deleteBtn").addEventListener("click", toggleDeleteMode);
+    cards.forEach(card => {
+      const name = card.querySelector(".fish-name").textContent.toLowerCase();
+      const category = (card.dataset.category || "").toLowerCase();
+      card.style.display = (name.includes(input) || category.includes(input)) ? "" : "none";
+    });
+  }
 
-    // 🔍 Filter fishes
-    function filterFishes() {
-      const input = document.getElementById("fishSearch").value.toLowerCase();
-      const cards = document.querySelectorAll(".fish-card");
-      cards.forEach(card => {
-        const name = card.querySelector(".fish-name").textContent.toLowerCase();
-        const category = (card.dataset.category || "").toLowerCase();
-        card.style.display = (name.includes(input) || category.includes(input)) ? "" : "none";
-      });
-    }
+  loadFishes();
+</script>
 
-    // 🟢 Initialize
-    loadFishes();
-  </script>
 </body>
 </html>

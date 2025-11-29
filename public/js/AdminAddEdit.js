@@ -1,43 +1,21 @@
-/*
- * AdminAddEdit.js
- * Shared logic for adding/editing Plants and Fishes
- * Auto-detects context from current page (AdminAddEditPlant.html / AdminAddEditFish.html)
- */
+/* =============================================================
+   AdminAddEdit.js (FINAL VERSION)
+   Works for BOTH Plants and Fish with new backend
+   Backend: https://mygardenbook-backend.onrender.com
+============================================================= */
 
-// ✅ Helper functions
-function showMessage(msg, type = "success") {
-  const el = document.getElementById("statusMsg");
-  if (!el) return;
-  el.style.display = "block";
-  el.style.color = type === "error" ? "#b22222" : "#2d6a1c";
-  el.textContent = msg;
-}
+const API_BASE = "https://mygardenbook-backend.onrender.com";
 
-function capitalize(str) {
-  return str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
-}
+// Detect page type from filename
+const page = window.location.pathname.toLowerCase();
+const isPlantPage = page.includes("plant");
+const isFishPage = page.includes("fish");
 
-const API_BASE = "http://localhost:5000";
+const type = isPlantPage ? "plant" : "fish";
+const endpoint = isPlantPage ? "plants" : "fish";
+const redirectPage = isPlantPage ? "AdminPlants.html" : "AdminFishes.html";
 
-// 🧠 Detect type (plant or fish)
-const pageName = window.location.pathname.toLowerCase();
-const isPlantPage = pageName.includes("plant");
-const isFishPage = pageName.includes("fish");
-
-const itemType = isPlantPage ? "plant" : isFishPage ? "fish" : "unknown";
-const API_ENDPOINT = isPlantPage ? "plants" : "fishes";
-const pageList = isPlantPage ? "AdminPlants.html" : "AdminFishes.html";
-
-if (itemType === "unknown") {
-  alert("Invalid page context: cannot determine whether this is a plant or fish page.");
-}
-
-const params = new URLSearchParams(window.location.search);
-const itemId = params.get("id");
-
-let currentItem = null;
-
-// 🧩 Elements
+// DOM elements
 const sciName = document.getElementById("sciName");
 const commonName = document.getElementById("commonName");
 const category = document.getElementById("category");
@@ -47,147 +25,131 @@ const imageUpload = document.getElementById("imageUpload");
 const qrSection = document.getElementById("qrSection");
 const qrImage = document.getElementById("qrImage");
 const qrLink = document.getElementById("qrLink");
+const statusMsg = document.getElementById("statusMsg");
 
-/* ---------------------------------------------------------
-   LOAD EXISTING ITEM (EDIT MODE)
---------------------------------------------------------- */
+// Extract ?id=
+const params = new URLSearchParams(window.location.search);
+const itemId = params.get("id");
+let currentItem = null;
+
+/* ------------------ STATUS MESSAGE ------------------ */
+function showMessage(msg, type = "success") {
+  statusMsg.style.display = "block";
+  statusMsg.style.color = type === "error" ? "#b22222" : "#2d6a1c";
+  statusMsg.textContent = msg;
+}
+
+/* ------------------ LOAD EXISTING ITEM ------------------ */
 async function loadItem() {
   if (!itemId) return;
 
   try {
-    const res = await fetch(`${API_BASE}/api/${API_ENDPOINT}/${itemId}`);
-    if (!res.ok) throw new Error("Failed to load item");
-
+    const res = await fetch(`${API_BASE}/api/${endpoint}/${itemId}`);
     const item = await res.json();
+
     currentItem = item;
 
-    sciName.value = item.scientificName || "";
+    sciName.value = item.scientific_name || "";
     commonName.value = item.name || "";
     category.value = item.category || "";
     description.value = item.description || "";
 
-    // Show QR on first load (read-only)
-    if (item.qrCode) {
-      qrImage.src = `${API_BASE}${item.qrCode}?t=${Date.now()}`;
-      qrLink.href = `${itemType === "plant" ? "PlantView.html" : "FishView.html"}?id=${item.id}`;
-      qrLink.textContent = `View ${capitalize(itemType)} Page`;
+    if (item.qr_code_url) {
+      qrImage.src = item.qr_code_url;
+      qrLink.href = `${isPlantPage ? "PlantView.html" : "FishView.html"}?id=${item.id}`;
+      qrLink.textContent = `View ${type} page`;
       qrSection.style.display = "block";
     }
   } catch (err) {
-    console.error("Error loading:", err);
-    showMessage("❌ Error loading item", "error");
+    console.error("Error loading item:", err);
+    showMessage("Error loading item", "error");
   }
 }
 
-/* ---------------------------------------------------------
-   SAVE / UPDATE ITEM
---------------------------------------------------------- */
+/* ------------------ SAVE / UPDATE ITEM ------------------ */
 async function saveForm() {
-  const data = {
-    type: itemType,
-    name: commonName.value.trim(),
-    scientificName: sciName.value.trim(),
-    category: category.value.trim(),
-    description: description.value.trim(),
-  };
-
-  const file = imageUpload.files[0];
   const formData = new FormData();
 
-  for (let key in data) formData.append(key, data[key]);
-  if (file) formData.append("image", file);
+  formData.append("name", commonName.value.trim());
+  formData.append("scientific_name", sciName.value.trim());
+  formData.append("category", category.value.trim());
+  formData.append("description", description.value.trim());
+  formData.append("type", type);
 
-  showMessage("⏳ Saving...");
+  if (imageUpload.files.length > 0) {
+    formData.append("image", imageUpload.files[0]);
+  }
+
+  let url = "";
+  let method = "POST";
+
+  // Add or edit?
+  if (itemId) {
+    url = `${API_BASE}/api/edit/${type}/${itemId}`;
+  } else {
+    url = `${API_BASE}/api/add`;
+  }
+
+  showMessage("Saving...");
 
   try {
-    let endpoint, method;
+    const res = await fetch(url, { method, body: formData });
+    const data = await res.json();
 
-    if (itemId) {
-      // EDIT MODE — MUST use POST for multer to work
-      endpoint = `${API_BASE}/api/edit/${itemType}/${itemId}`;
-      method = "POST";
-    } else {
-      // CREATE MODE
-      endpoint = `${API_BASE}/api/add`;
-      method = "POST";
-    }
-
-    const res = await fetch(endpoint, { method, body: formData });
-    const result = await res.json();
-
-    if (!res.ok || !result.success) {
-      showMessage("❌ Failed to save item", "error");
+    if (!res.ok || !data.success) {
+      showMessage("Failed to save item", "error");
       return;
     }
 
-    // 🔹 If editing → redirect immediately
-    if (itemId) {
-      window.location.href = pageList;
-      return;
-    }
+    // First save → show QR
+    if (!itemId) {
+      currentItem = data.item;
 
-    // 🔹 New item → show QR on first save
-    if (result.item && result.item.qrCode && !saveForm.hasShownQR) {
-      currentItem = result.item;
-
-      qrImage.src = `${API_BASE}${currentItem.qrCode}?t=${Date.now()}`;
-      qrLink.href = `${itemType === "plant" ? "PlantView.html" : "FishView.html"}?id=${currentItem.id}`;
-      qrLink.textContent = `View ${capitalize(itemType)} Page`;
+      qrImage.src = currentItem.qr_code_url;
+      qrLink.href = `${isPlantPage ? "PlantView.html" : "FishView.html"}?id=${currentItem.id}`;
+      qrLink.textContent = `View ${type} page`;
 
       qrSection.style.display = "block";
-      saveForm.hasShownQR = true;
+      showMessage("QR generated! Save again to continue.", "success");
 
-      showMessage("📸 QR generated! Click Save again to continue.", "success");
+      itemId = currentItem.id; // Update ID for second click
       return;
     }
 
-    // 🔹 Second save → redirect
-    if (saveForm.hasShownQR) {
-      window.location.href = pageList;
-    }
+    // Second save → redirect
+    window.location.href = redirectPage;
 
   } catch (err) {
     console.error("Save error:", err);
-    showMessage("❌ Server error while saving.", "error");
+    showMessage("Server error while saving.", "error");
   }
 }
 
-/* ---------------------------------------------------------
-   CLEAR FORM
---------------------------------------------------------- */
+/* ------------------ CLEAR FORM ------------------ */
 function clearForm() {
-  document.querySelectorAll("input, textarea, select").forEach(
-    el => (el.value = "")
-  );
-  document.getElementById("statusMsg").style.display = "none";
+  sciName.value = "";
+  commonName.value = "";
+  category.value = "";
+  description.value = "";
+  imageUpload.value = "";
+  statusMsg.style.display = "none";
   qrSection.style.display = "none";
-  currentItem = null;
 }
 
-/* ---------------------------------------------------------
-   DOWNLOAD QR
---------------------------------------------------------- */
+/* ------------------ DOWNLOAD QR ------------------ */
 function downloadQR() {
   if (!currentItem) return;
-  const qrName = `${currentItem.name.replace(/\s+/g, "_")}_QR.png`;
 
   const link = document.createElement("a");
-  link.href = `${API_BASE}${currentItem.qrCode}`;
-  link.download = qrName;
-  document.body.appendChild(link);
+  link.href = currentItem.qr_code_url;
+  link.download = `${currentItem.name.replace(/\s+/g, "_")}_QR.png`;
   link.click();
-  document.body.removeChild(link);
 }
 
-/* ---------------------------------------------------------
-   UNIVERSAL AI CHAT (delegated to chat.js)
---------------------------------------------------------- */
-// The HTML button calls: handleUniversalAI()
-
-// ---------------------------------------------------------
+/* ------------------ INIT ------------------ */
 loadItem();
 
-// Expose globally
+// Global expose
 window.saveForm = saveForm;
 window.clearForm = clearForm;
 window.downloadQR = downloadQR;

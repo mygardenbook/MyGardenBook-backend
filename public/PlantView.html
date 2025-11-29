@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-<title>Plant Details</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fish Details</title>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Kalam:wght@700&display=swap" rel="stylesheet">
 
 <style>
@@ -17,27 +17,18 @@
     background-size: cover;
     position: relative;
     min-height: 100vh;
+    overflow-x: hidden;
   }
 
   body::before {
     content: "";
     position: fixed;
     top: 0; left: 0;
-    width: 100%; height: 100%;
+    width: 100vw; height: 100vh;
     background: rgba(255,255,255,0.7);
     z-index: 1;
   }
 
-  .container {
-    position: relative;
-    z-index: 5;
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  /* ---------- BACK BUTTON ---------- */
   .back-arrow {
     position: fixed;
     top: 16px;
@@ -50,7 +41,16 @@
     height: 36px;
   }
 
-  /* ---------- FLIP CARD ---------- */
+  .container {
+    position: relative;
+    z-index: 5;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Flip card */
   .flip-card {
     width: 70%;
     max-width: 320px;
@@ -104,11 +104,13 @@
   .qr-flip {
     width: 120px; height: 120px;
     object-fit: contain;
+    background: white;
     border-radius: 12px;
+    padding: 0.3rem;
     margin-bottom: 0.4rem;
   }
 
-  /* ---------- DETAILS ---------- */
+  /* Details */
   .details {
     width: 85%;
     max-width: 420px;
@@ -127,7 +129,7 @@
     line-height: 1.4rem;
   }
 
-  /* ---------- AI SECTION ---------- */
+  /* AI section */
   .ai-section {
     width: 85%;
     max-width: 420px;
@@ -135,7 +137,7 @@
     border-radius: 20px;
     box-shadow: 0 2px 10px rgba(183,218,184,0.6);
     padding: 1rem;
-    margin: 2rem 0 2rem 0;
+    margin: 2rem 0;
     z-index: 5;
   }
 
@@ -151,25 +153,21 @@
   }
 
   .ai-section button {
-    background: rgba(143,216,113,0.5);
-    border: 3px solid #66A03A;
-    border-radius: 30px;
-    padding:0.4rem 1.4rem;
-    font-size:1rem;
-    cursor:pointer;
-    margin-top:0.7rem;
-  }
-
-  @media (max-width:600px){
-    .flip-card { width: 85%; margin-top: 4rem; }
-    .details { width: 90%; }
+    margin-top: 0.6rem;
+    background: #BFE7BC;
+    border: none;
+    padding: 0.6rem 1rem;
+    border-radius: 14px;
+    cursor: pointer;
+    font-size: 1rem;
   }
 </style>
 </head>
 
 <body>
 
-<button class="back-arrow" onclick="window.history.back()">
+<!-- Back always goes to Login -->
+<button class="back-arrow" onclick="window.location.href='Login.html'">
   <svg viewBox="0 0 30 30" width="100%" height="100%">
     <polyline points="20,6 10,15 20,24"
               fill="none"
@@ -182,21 +180,21 @@
 
 <div class="container">
 
-  <!-- FLIP CARD -->
+  <!-- Flip Card -->
   <div class="flip-card" id="flipCard">
     <div class="flip-inner">
       <div class="flip-front">
-        <img id="plantImage" src="placeholder.jpg">
+        <img id="fishImage" src="placeholder.jpg" alt="Fish image">
       </div>
 
       <div class="flip-back">
-        <img id="plantQR" class="qr-flip" src="qr_placeholder.png">
+        <img id="fishQR" class="qr-flip" src="qr_placeholder.png">
         <p>Scan Me!</p>
       </div>
     </div>
   </div>
 
-  <!-- DETAILS -->
+  <!-- Details -->
   <div class="details">
     <p><strong>Scientific Name:</strong> <span id="scientificName">Loading...</span></p>
     <p><strong>Common Name:</strong> <span id="commonName">Loading...</span></p>
@@ -209,42 +207,46 @@
   <!-- AI -->
   <div class="ai-section">
     <label>Ask AI</label>
-    <textarea id="aiQuestion" placeholder="Ask something..."></textarea>
+    <textarea id="aiQuestion" placeholder="Ask something about this fish..."></textarea>
     <button onclick="handleUniversalAI()">Chat with AI</button>
 
-    <div id="aiResponse" style="display:flex;flex-direction:column;background:#f5f5f5;padding:1rem;border-radius:10px;max-height:200px;overflow-y:auto;"></div>
+    <div id="aiResponse" style="background:#fff;padding:1rem;border-radius:10px;max-height:200px;overflow-y:auto;"></div>
   </div>
 
 </div>
 
 <script>
-  const API_BASE = window.location.origin;
-  const plantId = window.location.pathname.split("/").pop();
+  const API_BASE = "https://mygardenbook-backend.onrender.com";
 
-  const imgEl = document.getElementById("plantImage");
-  const qrEl = document.getElementById("plantQR");
+  const params = new URLSearchParams(window.location.search);
+  const fishId = params.get("id");
 
-  async function loadPlant() {
-    const res = await fetch(`${API_BASE}/api/plants/${plantId}`);
-    const plant = await res.json();
+  async function loadFish() {
+    try {
+      const res = await fetch(`${API_BASE}/api/fish/${fishId}`);
+      const fish = await res.json();
 
-    imgEl.src = plant.image ? API_BASE + plant.image : "placeholder.jpg";
-    qrEl.src = plant.qrCode ? API_BASE + plant.qrCode : "qr_placeholder.png";
-    scientificName.textContent = plant.scientificName || "N/A";
-    commonName.textContent = plant.name || "N/A";
-    category.textContent = plant.category || "N/A";
-    description.textContent = plant.description || "N/A";
+      fishImage.src = fish.image_url || "placeholder.jpg";
+      fishQR.src = fish.qr_code_url || "qr_placeholder.png";
+      scientificName.textContent = fish.scientific_name || "N/A";
+      commonName.textContent = fish.name || "N/A";
+      category.textContent = fish.category || "N/A";
+      description.textContent = fish.description || "No description available.";
+
+    } catch (err) {
+      console.error("Fish load error:", err);
+      description.textContent = "Failed to load fish details.";
+    }
   }
 
-  // Flip–Card click behavior
   document.getElementById("flipCard").addEventListener("click", () => {
     document.getElementById("flipCard").classList.toggle("flipped");
   });
 
-  loadPlant();
+  loadFish();
 </script>
 
-<script src="/js/chat.js"></script>
+<script src="js/chat.js"></script>
 
 </body>
 </html>

@@ -7,172 +7,136 @@
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Kalam:wght@700&display=swap" rel="stylesheet">
 
 <style>
-  /* 🎨 Your original CSS — unchanged */
+  /* original styles preserved */
   body {
     margin: 0;
-    padding: 0;
-    font-family: 'Baloo 2', 'Kalam', 'Arial', sans-serif;
+    font-family: 'Baloo 2','Kalam','Arial',sans-serif;
     background: url('Bg.png') no-repeat center center fixed;
     background-size: cover;
     position: relative;
-    overflow-x: hidden;
   }
-
   .overlay {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
+    position: fixed; inset: 0;
     background: rgba(255,255,255,0.7);
     z-index: 1;
   }
-
   .back-arrow {
-    position: fixed;
-    top: 16px;
-    left: 16px;
-    z-index: 5;
-    background: none;
-    border: none;
-    cursor: pointer;
-    width: 36px;
-    height: 36px;
+    position: fixed; top: 16px; left: 16px;
+    width: 36px; height: 36px;
+    background: none; border: none; cursor: pointer; z-index: 5;
   }
-
   h1 {
     background: rgba(143,216,113,0.6);
-    color: #262A23;
-    font-size: 2rem;
-    text-align: center;
+    margin: 4.5rem auto 2rem;
     padding: 0.8rem 2rem;
-    border-radius: 20px;
     width: fit-content;
-    margin: 4.5rem auto 2rem auto;
-    font-weight: 600;
-    position: relative;
-    z-index: 2;
+    border-radius: 20px;
+    font-size: 2rem;
+    position: relative; z-index: 2;
   }
-
   .fish-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2,1fr);
     gap: 1.5rem;
-    justify-items: center;
-    width: 100%;
     max-width: 420px;
     margin: 0 auto 3rem;
-    position: relative;
     z-index: 2;
+    position: relative;
   }
-
   .fish-card {
     background: rgba(143,216,113,0.5);
-    border-radius: 20px;
     box-shadow: 0 4px 18px #B7DAB8cc;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 0.8rem;
-    transition: transform 0.2s ease, box-shadow 0.2s;
+    border-radius: 20px;
+    padding: .8rem;
     width: 130px;
     cursor: pointer;
-  }
-
-  .fish-card:hover {
-    transform: scale(1.03);
-    box-shadow: 0 6px 20px #B7DAB8;
-  }
-
-  .fish-img {
-    width: 70px;
-    height: 70px;
-    object-fit: cover;
-    border-radius: 10px;
-    background: #fff;
-  }
-
-  .fish-name {
-    background: #204d1e;
-    color: #fff;
-    font-size: 0.85rem;
-    border-radius: 16px;
-    padding: 0.3rem 0.8rem;
-    margin-top: 0.6rem;
     text-align: center;
   }
-
-  @media (max-width: 600px) {
-    .fish-grid {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1.2rem;
-      max-width: 90%;
-    }
-    h1 { font-size: 1.6rem; margin-top: 4rem; }
-    .fish-card { width: 110px; }
+  .fish-img {
+    width: 70px; height: 70px;
+    object-fit: cover;
+    border-radius: 10px;
+    background: white;
+  }
+  .fish-name {
+    background: #204d1e;
+    color: white;
+    margin-top: .6rem;
+    padding: .3rem .8rem;
+    border-radius: 16px;
+    font-size: .85rem;
   }
 </style>
 </head>
 
 <body>
-  <div class="overlay"></div>
+<div class="overlay"></div>
 
-  <button class="back-arrow" onclick="window.location.href='AdminFishCategories.html'" aria-label="Go back">
-    <svg viewBox="0 0 30 30" width="100%" height="100%">
-      <polyline points="20,6 10,15 20,24"
-                fill="none" stroke="#262A23"
-                stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  </button>
+<button class="back-arrow" onclick="location.href='AdminFishCategories.html'">
+  <svg viewBox="0 0 30 30" width="100%" height="100%">
+    <polyline points="20,6 10,15 20,24"
+      fill="none" stroke="#262A23" stroke-width="4"
+      stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
 
-  <h1 id="categoryTitle">Category Name</h1>
+<h1 id="categoryTitle">Fish Category</h1>
 
-  <div class="fish-grid" id="fishGrid"></div>
+<div class="fish-grid" id="fishGrid"></div>
+<div id="noResults" style="display:none; text-align:center; color:#204d1e;">No fishes found in this category.</div>
 
-  <script>
-  const API_BASE = "http://localhost:5000";
-  const grid = document.getElementById("fishGrid");
-  const title = document.getElementById("categoryTitle");
+<script>
+  const API_BASE = location.hostname.includes("localhost")
+    ? "http://localhost:5000"
+    : "https://mygardenbook-backend.onrender.com";
 
-  // 🔍 Extract category from URL
-  const params = new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(location.search);
   const categoryName = params.get("category") || "Fish Category";
-  title.textContent = categoryName;
 
-  // 🐠 Load fishes from backend
+  document.getElementById("categoryTitle").textContent = categoryName;
+
   async function loadFishes() {
     try {
       const res = await fetch(`${API_BASE}/api/fishes`);
-      if (!res.ok) throw new Error("Unable to load fishes");
-      const fishes = await res.json();
+      const all = await res.json();
 
-      // Filter fishes belonging to this category
-      const filtered = fishes.filter(
-        (f) => f.category && f.category.toLowerCase() === categoryName.toLowerCase()
+      const filtered = all.filter(
+        f => f.category && f.category.toLowerCase() === categoryName.toLowerCase()
       );
 
+      const grid = document.getElementById("fishGrid");
+      const noRes = document.getElementById("noResults");
+
+      grid.innerHTML = "";
+
       if (filtered.length === 0) {
-        grid.innerHTML = `<p style="color:#204d1e;font-size:1.1rem;">No fishes found in this category.</p>`;
+        noRes.style.display = "block";
         return;
       }
 
-      // Render each fish card
-      grid.innerHTML = filtered
-        .map(
-          (fish) => `
-          <div class="fish-card" onclick="openEditPage('${fish.name}', '${fish.category}')">
-            <img src="${fish.image || 'placeholder.jpg'}" class="fish-img" alt="${fish.name}">
-            <div class="fish-name">${fish.name}</div>
-          </div>`
-        )
-        .join("");
-    } catch (err) {
-      console.error("Error loading fishes:", err);
-      grid.innerHTML = `<p style="color:#a33;">Failed to load fishes.</p>`;
-    }
-  }
+      noRes.style.display = "none";
 
-  function openEditPage(name, category) {
-    const url = `AdminAddFish.html?name=${encodeURIComponent(name)}&category=${encodeURIComponent(category)}`;
-    window.location.href = url;
+      filtered.forEach(fish => {
+        const card = document.createElement("div");
+        card.className = "fish-card";
+
+        card.onclick = () => {
+          location.href = `AdminEditFish.html?id=${encodeURIComponent(fish.id)}`;
+        };
+
+        card.innerHTML = `
+          <img class="fish-img" src="${fish.image || 'placeholder.jpg'}" alt="${fish.commonName}">
+          <div class="fish-name">${fish.commonName}</div>
+        `;
+
+        grid.appendChild(card);
+      });
+
+    } catch (err) {
+      console.error(err);
+      document.getElementById("noResults").textContent = "Error loading fishes.";
+      document.getElementById("noResults").style.display = "block";
+    }
   }
 
   loadFishes();

@@ -2,6 +2,7 @@
  * utils.js
  * Shared helper functions across the MyGardenBook admin interface
  */
+export const API_BASE = "https://mygardenbook-backend.onrender.com";
 
 // 💬 Simple message handler for consistent status updates
 export function showMessage(msg, type = "info", targetId = "statusMsg") {

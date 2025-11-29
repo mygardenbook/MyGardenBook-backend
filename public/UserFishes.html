@@ -1,360 +1,157 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>User - Fishes</title>
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Kalam:wght@700&display=swap" rel="stylesheet">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
 
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      min-height: 100vh;
-      font-family: 'Baloo 2','Kalam','Arial',sans-serif;
-      overflow-x: hidden;
-      box-sizing: border-box;
-    }
+<title>Fishes</title>
 
-    body { position: relative; z-index: 0; }
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Kalam:wght@700&display=swap" rel="stylesheet">
 
-    /* ✅ Background identical to Admin */
-    .background-overlay {
-      position: fixed;
-      z-index: 0;
-      width: 100%;
-      height: 100%;
-      top: 0;
-      left: 0;
-      background: url('Bg.png') no-repeat center center fixed;
-      background-size: cover;
-    }
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Baloo 2','Kalam',sans-serif;
+    background: url('Bg.png') center/cover no-repeat fixed;
+    position: relative;
+    min-height:100vh;
+  }
 
-    .background-overlay::after {
-      content: "";
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      top: 0;
-      left: 0;
-      background: #fff;
-      opacity: 0.7;
-      z-index: 1;
-    }
+  body::before {
+    content:"";
+    position:fixed;
+    width:100%; height:100%;
+    background:rgba(255,255,255,0.7);
+    top:0; left:0;
+    z-index:0;
+  }
 
-    /* ✅ Back arrow */
-    .back-arrow {
-      position: absolute;
-      top: 1.8rem;
-      left: 2rem;
-      z-index: 3;
-      background: none;
-      border: none;
-      cursor: pointer;
-      width: 34px;
-      height: 34px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+  .content {
+    z-index:5; position:relative;
+    padding-top:3.5rem;
+    display:flex; flex-direction:column; align-items:center;
+  }
 
-    .back-arrow svg polyline {
-      stroke: black;
-      stroke-width: 4;
-    }
+  .back-arrow {
+    position:fixed; top:16px; left:16px;
+    width:36px; height:36px;
+    background:none; border:none; cursor:pointer; z-index:10;
+  }
 
-    /* ✅ Button row */
-    .button-row {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 1rem;
-      margin-top: 6rem;
-      position: relative;
-      z-index: 2;
-    }
+  .search-wrap {
+    width:90%; max-width:600px;
+    margin:1rem auto 2rem auto;
+  }
 
-    .menu-btn {
-      background: #BFE7BC;
-      border: none;
-      border-radius: 20px;
-      font-size: 1.05rem;
-      color: #262A23;
-      font-weight: bold;
-      font-family: 'Baloo 2','Kalam',cursive,sans-serif;
-      padding: 0.7rem 1.3rem;
-      cursor: pointer;
-      transition: background 0.2s ease;
-      white-space: nowrap;
-      box-shadow: 0 6px 18px #bfbfbf41;
-    }
+  .search-box {
+    background:white; display:flex; align-items:center;
+    padding:0.7rem 1rem; border-radius:22px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.15);
+  }
 
-    .menu-btn:hover {
-      background: #b3e572;
-      color: #262A23;
-    }
+  .search-box input {
+    width:100%; border:none; outline:none;
+    font-size:1rem; background:none; margin-left:8px;
+  }
 
-    /* ✅ Search bar */
-    .search-bar {
-      display: flex;
-      align-items: center;
-      background: #fff;
-      border-radius: 30px;
-      box-shadow: 0 6px 18px #bfbfbf41;
-      padding: 0 1rem;
-      width: 90%;
-      max-width: 650px;
-      height: 45px;
-      margin: 2rem auto;
-      z-index: 2;
-      position: relative;
-    }
+  .grid {
+    width:90%; max-width:700px;
+    display:grid; grid-template-columns:repeat(2,1fr);
+    gap:1rem; margin-bottom:2.5rem;
+  }
 
-    .search-bar input {
-      width: 90%;
-      border: none;
-      outline: none;
-      font-size: 1rem;
-      background: transparent;
-      margin-left: 10px;
-      color: #222;
-      font-family: inherit;
-    }
+  .card {
+    background:#BFE7BC;
+    padding:0.7rem; border-radius:18px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.15);
+    text-align:center; cursor:pointer;
+    transition:transform .15s ease;
+  }
 
-    .search-bar input::placeholder {
-      color: #376325b0;
-      font-size: 1rem;
-    }
+  .card:hover { transform:scale(1.04); }
 
-    .search-bar svg {
-      width: 1.8rem;
-      height: 1.8rem;
-      color: #4A771C;
-    }
+  .card img {
+    width:70px; height:70px;
+    border-radius:12px; object-fit:cover;
+    border:2px solid #4A771C;
+  }
 
-    /* ✅ Fish grid (like plants grid) */
-    .fish-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      justify-content: center;
-      align-items: start;
-      gap: 1rem;
-      width: 90%;
-      max-width: 650px;
-      margin: 0 auto 3rem auto;
-      position: relative;
-      z-index: 2;
-    }
+  .card-name {
+    margin-top:0.5rem; font-size:1.05rem; color:#1A2B10;
+  }
+</style>
 
-    .fish-card {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: #BFE7BC;
-      border-radius: 20px;
-      padding: 0.7rem;
-      height: 130px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-      cursor: pointer;
-      transition: transform 0.15s ease, background 0.2s ease;
-    }
-
-    .fish-card:hover { transform: scale(1.03); }
-
-    .fish-img {
-      width: 50px;
-      height: 50px;
-      border-radius: 12px;
-      border: 2px solid #4A771C;
-      background: #fff;
-      object-fit: cover;
-    }
-
-    .fish-name {
-      font-size: 1rem;
-      font-family: 'Baloo 2','Kalam',cursive,sans-serif;
-      color: #1A2B10;
-      margin-top: 0.5rem;
-      text-align: center;
-    }
-
-    /* ✅ Ask AI section */
-    .ask-ai {
-      width: 90%;
-      max-width: 650px;
-      margin: 1.5rem auto 2.5rem auto;
-      background: #BFE7BC;
-      border-radius: 20px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      z-index: 2;
-    }
-
-    .ask-ai textarea {
-      width: 100%;
-      border-radius: 16px;
-      border: none;
-      resize: none;
-      font-size: 1rem;
-      padding: 0.8rem;
-      font-family: 'Baloo 2';
-      outline: none;
-      margin-bottom: 1rem;
-      color: #262A23;
-      background: #fff;
-    }
-
-    .ask-ai button {
-      background: #BFE7BC;
-      border: none;
-      border-radius: 20px;
-      font-size: 1rem;
-      color: #262A23;
-      font-family: 'Baloo 2','Kalam',cursive,sans-serif;
-      padding: 0.6rem 1.8rem;
-      cursor: pointer;
-      transition: background 0.2s ease;
-    }
-
-    .ask-ai button:hover {
-      background: #b3e572;
-      color: #262A23;
-    }
-
-    @media (max-width:600px) {
-      .fish-grid { grid-template-columns: 1fr 1fr; gap: 0.7rem; }
-      .fish-card { height: 110px; border-radius: 16px; }
-      .fish-img { width: 42px; height: 42px; }
-      .fish-name { font-size: 0.9rem; }
-      .menu-btn { font-size: 0.95rem; padding: 0.5rem 1rem; }
-      .back-arrow { width: 28px; height: 28px; top: 1rem; left: 1rem; }
-    }
-  </style>
 </head>
 
 <body>
-  <div class="background-overlay"></div>
 
-  <button class="back-arrow" onclick="window.location.href='User.html'" aria-label="Go back">
-    <svg viewBox="0 0 30 30" width="100%" height="100%">
-      <polyline points="20,6 10,15 20,24"
-                fill="none"
-                stroke="black"
-                stroke-width="4"
-                stroke-linecap="round"
-                stroke-linejoin="round"/>
-    </svg>
-  </button>
+<button class="back-arrow" onclick="window.location.href='User.html'">
+  <svg viewBox="0 0 30 30" width="100%" height="100%">
+    <polyline points="20,6 10,15 20,24"
+              fill="none" stroke="#262A23"
+              stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
 
-  <!-- Top buttons -->
-  <div class="button-row">
-    <button class="menu-btn" onclick="window.location.href='UserFishCategories.html'">Categories</button>
-    <button class="menu-btn" onclick="window.location.href='UserPlants.html'">Plants</button>
-  </div>
+<div class="content">
 
-  <!-- Search -->
-  <div class="search-bar">
-    <svg viewBox="0 0 24 24">
-      <circle cx="11" cy="11" r="7" stroke="#4A771C" stroke-width="2" fill="none"/>
-      <line x1="18" y1="18" x2="15.6" y2="15.6" stroke="#4A771C" stroke-width="2" />
-    </svg>
-    <input id="searchInput" type="text" placeholder="Search fishes...">
-  </div>
-
-  <!-- Fish cards -->
-  <div class="fish-grid" id="fishGrid">
-    <!-- Static samples for layout testing -->
-    <div class="fish-card" data-id="sample1" data-name="Goldfish">
-      <img src="goldfish.jpg" class="fish-img" alt="Goldfish">
-      <div class="fish-name">Goldfish</div>
-    </div>
-    <div class="fish-card" data-id="sample2" data-name="Betta">
-      <img src="betta.jpg" class="fish-img" alt="Betta">
-      <div class="fish-name">Betta</div>
+  <div class="search-wrap">
+    <div class="search-box">
+      <svg width="20" height="20" viewBox="0 0 24 24">
+        <circle cx="10" cy="10" r="7" stroke="#4A771C" stroke-width="2" fill="none"/>
+        <line x1="15" y1="15" x2="20" y2="20" stroke="#4A771C" stroke-width="2"/>
+      </svg>
+      <input id="fishSearch" placeholder="Search for a fish..." oninput="filterFishes()">
     </div>
   </div>
 
-  <!-- Ask AI section -->
-  <div class="ai-section">
-  <label>Ask AI</label>
-  <textarea id="aiQuestion" placeholder="Ask something..."></textarea>
-  <button class ="btn" onclick="handleUniversalAI()">Chat with AI</button>
-  <div id="aiResponse" style="display:flex; flex-direction:column; background:#f5f5f5; padding:1rem; border-radius:10px; max-height:200px; overflow-y:auto;"></div>
+  <div class="grid" id="fishGrid"></div>
+
 </div>
 
-  <script>
-    const API_BASE = "http://localhost:5000";
+<script>
+  const API_BASE = "https://mygardenbook-backend.onrender.com";
 
-    async function loadFishes() {
-      try {
-        const res = await fetch(`${API_BASE}/api/fishes`);
-        if (!res.ok) throw new Error("Failed to load fishes");
-        const fishes = await res.json();
-        renderFishes(fishes);
-      } catch (err) {
-        console.error("Error fetching fishes:", err);
-      }
+  async function loadFishes() {
+    const res = await fetch(`${API_BASE}/api/fish`);
+    const fishes = await res.json();
+    window.allFishes = fishes;
+    renderFishes(fishes);
+  }
+
+  function renderFishes(fishes) {
+    const grid = document.getElementById("fishGrid");
+    grid.innerHTML = "";
+
+    if (!fishes.length) {
+      grid.innerHTML = "<p>No fishes found.</p>";
+      return;
     }
 
-    function renderFishes(fishes) {
-      const grid = document.getElementById("fishGrid");
-      grid.innerHTML = "";
-
-      // Keep sample cards first for layout test
-      const samples = [
-        { id: "sample1", name: "Goldfish", image: "goldfish.jpg" },
-        { id: "sample2", name: "Betta", image: "betta.jpg" }
-      ];
-
-      [...samples, ...fishes].forEach(f => {
-        const card = document.createElement("div");
-        card.className = "fish-card";
-        card.dataset.id = f.id || f.name;
-        card.dataset.name = f.name;
-        card.onclick = () => window.location.href = `FishView.html?id=${f.id || f.name}`;
-        card.innerHTML = `
-          <img src="${f.image || 'placeholder.jpg'}" class="fish-img" alt="${f.name}">
-          <div class="fish-name">${f.name}</div>
-        `;
-        grid.appendChild(card);
-      });
-    }
-
-    // Search functionality
-    const searchInput = document.getElementById("searchInput");
-    searchInput.addEventListener("input", () => {
-      const query = searchInput.value.toLowerCase();
-      document.querySelectorAll(".fish-card").forEach(card => {
-        const name = card.dataset.name.toLowerCase();
-        card.style.display = name.includes(query) ? "flex" : "none";
-      });
+    fishes.forEach(f => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <img src="${f.image_url || 'placeholder.jpg'}">
+        <div class="card-name">${f.name}</div>
+      `;
+      card.onclick = () => window.location.href = `UserEachFish.html?id=${f.id}`;
+      grid.appendChild(card);
     });
+  }
 
-    function askAI() {
-      const q = document.getElementById('aiQuestion').value.trim();
-      const box = document.getElementById('aiResponse');
-      if (!q) return;
-      const user = document.createElement('div');
-      user.textContent = 'You: ' + q;
-      const ai = document.createElement('div');
-      ai.textContent = 'AI: (placeholder) I’ll give info about ' + q + ' soon!';
-      ai.style.marginTop = '0.3rem';
-      box.appendChild(user);
-      box.appendChild(ai);
-      box.scrollTop = box.scrollHeight;
-      document.getElementById('aiQuestion').value = '';
-    }
+  function filterFishes() {
+    const q = document.getElementById("fishSearch").value.toLowerCase();
+    const filtered = window.allFishes.filter(f =>
+      f.name.toLowerCase().includes(q) ||
+      (f.category || "").toLowerCase().includes(q)
+    );
+    renderFishes(filtered);
+  }
 
-    loadFishes();
-  </script>
-    <script src="/js/chat.js"></script>
+  loadFishes();
+</script>
 
 </body>
 </html>

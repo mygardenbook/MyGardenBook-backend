@@ -16,6 +16,7 @@
       position: relative;
       overflow: hidden;
     }
+
     body::before {
       content: "";
       position: fixed;
@@ -71,6 +72,7 @@
       font-family: 'Baloo 2', sans-serif;
       outline: none;
     }
+
     input::placeholder { color: #4A771Caa; }
 
     .eye-icon {
@@ -83,6 +85,7 @@
       opacity: 0.8;
       transition: opacity 0.2s;
     }
+
     .eye-icon:hover { opacity: 1; }
 
     .login-btn {
@@ -97,6 +100,7 @@
       transition: all 0.2s ease;
       min-width: 150px;
     }
+
     .login-btn:hover { background: #b3e572; color: #fff; transform: translateY(-2px); }
 
     .error-msg {
@@ -122,6 +126,7 @@
       <div class="input-group">
         <input type="text" id="username" placeholder="Username" autocomplete="off" />
       </div>
+
       <div class="input-group">
         <input type="password" id="password" placeholder="Password" autocomplete="off" />
         <svg id="togglePassword" class="eye-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
@@ -129,13 +134,15 @@
           <circle cx="12" cy="12" r="3"></circle>
         </svg>
       </div>
+
       <button id="loginBtn" class="login-btn">Login</button>
       <div id="errorMsg" class="error-msg"></div>
     </div>
   </div>
 
   <script>
-    const API_BASE = "http://localhost:5000";
+    // Auto-detect API (works for localhost + Render)
+    const API_BASE = "https://mygardenbook-backend.onrender.com";
 
     const usernameEl = document.getElementById("username");
     const passwordEl = document.getElementById("password");
@@ -145,9 +152,9 @@
 
     // 👁 Toggle password visibility
     togglePassword.addEventListener("click", () => {
-      const isPassword = passwordEl.type === "password";
-      passwordEl.type = isPassword ? "text" : "password";
-      togglePassword.innerHTML = isPassword
+      const isHidden = passwordEl.type === "password";
+      passwordEl.type = isHidden ? "text" : "password";
+      togglePassword.innerHTML = isHidden
         ? '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a20.07 20.07 0 0 1 5.06-5.94M1 1l22 22"/>'
         : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
     });
@@ -162,6 +169,7 @@
         return;
       }
 
+      errorMsg.style.color = "#b22222";
       errorMsg.textContent = "Checking credentials...";
 
       try {
@@ -178,25 +186,28 @@
           localStorage.setItem("role", data.role);
 
           errorMsg.style.color = "#2e7d32";
-          errorMsg.textContent = "✅ Login successful! Redirecting...";
+          errorMsg.textContent = "✔ Login successful! Redirecting...";
 
           setTimeout(() => {
             if (data.role === "admin") {
               window.location.href = "Admin.html";
             } else {
-              window.location.href = "User.html"; // placeholder
+              window.location.href = "User.html";
             }
-          }, 1000);
+          }, 900);
+
         } else {
+          errorMsg.style.color = "#b22222";
           errorMsg.textContent = "❌ Invalid username or password.";
         }
       } catch (err) {
         console.error("Login error:", err);
-        errorMsg.textContent = "❌ Server error. Please try again later.";
+        errorMsg.style.color = "#b22222";
+        errorMsg.textContent = "❌ Server unreachable. Try again.";
       }
     });
 
-    // Press Enter to login
+    // Hit Enter to login
     document.addEventListener("keydown", e => {
       if (e.key === "Enter") loginBtn.click();
     });

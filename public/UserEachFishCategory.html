@@ -1,234 +1,219 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Fishes in Category</title>
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Kalam:wght@700&display=swap" rel="stylesheet">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Baloo 2','Kalam','Arial',sans-serif;
-      background: url('Bg.png') no-repeat center center fixed;
-      background-size: cover;
-      min-height: 100vh;
-      position: relative;
-      overflow-x: hidden;
-    }
+<title>Fish Details</title>
 
-    .bg-overlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: rgba(255,255,255,0.64);
-      z-index: 0; pointer-events: none;
-    }
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Kalam:wght@700&display=swap" rel="stylesheet"/>
 
-    .container {
-      position: relative;
-      z-index: 1;
-      max-width: 520px;
-      margin: 25px auto 40px auto;
-      padding: 0 4vw 40px 4vw;
-    }
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
 
-    /* Back arrow */
-    .back-arrow {
-      background: none;
-      border: none;
-      color: #193c10;
-      cursor: pointer;
-      width: 28px;
-      height: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      z-index: 10;
-    }
+  body {
+    font-family:'Baloo 2','Kalam',sans-serif;
+    background:url('Bg.png') center/cover no-repeat fixed;
+    min-height:100vh;
+    position:relative;
+  }
 
-    /* Title bar */
-    .category-header {
-      background: #A6DEAA;
-      border-radius: 34px;
-      text-align: center;
-      font-size: 2em;
-      font-weight: 500;
-      color: #222e12;
-      margin: 75px auto 25px auto;
-      padding: 16px 0 14px 0;
-      letter-spacing: 0.5px;
-      width: 95%;
-      max-width: 500px;
-    }
+  body::before {
+    content:"";
+    position:fixed; top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(255,255,255,0.7);
+    z-index:0;
+  }
 
-    /* Grid layout */
-    .fish-grid {
-      display: grid;
-      grid-template-columns: repeat(2,1fr);
-      gap: 22px 16px;
-      justify-items: center;
-      padding-bottom: 15px;
-    }
+  .container {
+    position:relative;
+    z-index:5;
+    padding:1rem;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
 
-    /* Card style (matches plants) */
-    .fish-card {
-      background: #A6DEAA;
-      border-radius: 26px;
-      width: 117px;
-      height: 186px;
-      padding: 15px 6px 10px 6px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      cursor: pointer;
-      box-shadow: 0 2px 10px rgba(109,164,109,0.09);
-      transition: transform 0.1s ease, background 0.15s ease;
-    }
+  .back-arrow {
+    position:fixed;
+    top:16px; left:16px;
+    width:36px; height:36px;
+    background:none; border:none;
+    cursor:pointer; z-index:10;
+  }
 
-    .fish-card:hover {
-      background: #8BC48A;
-      box-shadow: 0 8px 18px rgba(32,71,36,0.12);
-      transform: scale(1.03);
-    }
+  /* Flip card */
+  .flip-card {
+    width:70%;
+    max-width:320px;
+    aspect-ratio:4/3;
+    margin-top:5rem;
+    perspective:1200px;
+    cursor:pointer;
+  }
 
-    .fish-img {
-      width: 84px;
-      height: 62px;
-      background: #d3f6d1;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 15px;
-      overflow: hidden;
-    }
+  .flip-inner {
+    width:100%; height:100%;
+    position:relative;
+    border-radius:20px;
+    transition:transform .8s ease;
+    transform-style:preserve-3d;
+    box-shadow:0 10px 25px rgba(0,0,0,0.15);
+  }
 
-    .fish-img img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 14px;
-    }
+  .flip-card.flipped .flip-inner { transform:rotateY(180deg); }
 
-    .fish-label {
-      background: #244a22;
-      color: #fff;
-      border-radius: 13px;
-      font-size: 1em;
-      width: 94%;
-      padding: 10px 2px;
-      text-align: center;
-      font-weight: 400;
-      letter-spacing: 0.5px;
-    }
+  .flip-front, .flip-back {
+    position:absolute;
+    width:100%; height:100%;
+    backface-visibility:hidden;
+    border-radius:20px;
+    overflow:hidden;
+  }
 
-    .status-msg {
-      text-align: center;
-      margin-top: 15px;
-      font-size: 1rem;
-      color: #204d1e;
-      min-height: 1em;
-      font-weight: 500;
-    }
+  .flip-front img {
+    width:100%; height:100%;
+    object-fit:cover;
+  }
 
-    @media (max-width:700px) {
-      .container { max-width: 99vw; padding: 0 2vw; }
-      .category-header { font-size: 1.4em; padding: 10px 0; margin-top: 60px; }
-      .fish-grid { gap: 13px 2vw; }
-      .fish-card { width: 41vw; max-width:118px; height: 120px; min-width: 90px; }
-      .fish-img { width: 67px; height: 53px; }
-      .fish-label { font-size: .97em; border-radius: 8px; padding: 6px 2px; }
-      .back-arrow { width: 26px; height: 26px; top: 10px; left: 12px; }
-    }
-  </style>
+  .flip-back {
+    transform:rotateY(180deg);
+    background:rgba(143,216,113,0.4);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+  }
+
+  .qr-img {
+    width:120px; height:120px;
+    border-radius:12px;
+    border:2px solid #4A771C;
+    margin-bottom:8px;
+  }
+
+  /* Details area */
+  .details {
+    width:85%;
+    max-width:420px;
+    margin-top:1.5rem;
+    color:#1a2a10;
+  }
+
+  .green-box {
+    background:rgba(143,216,113,0.35);
+    padding:1rem;
+    border-radius:12px;
+    line-height:1.4rem;
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+  }
+
+  /* AI */
+  .ai-section {
+    width:85%; max-width:420px;
+    margin:2rem 0;
+    padding:1rem;
+    background:rgba(143,216,113,0.3);
+    border-radius:20px;
+  }
+
+  textarea {
+    width:100%;
+    padding:0.7rem;
+    border-radius:10px;
+    border:none;
+    resize:none;
+    margin-bottom:.6rem;
+  }
+</style>
 </head>
 
 <body>
-  <div class="bg-overlay"></div>
 
-  <button class="back-arrow" onclick="window.location.href='UserFishCategories.html'" aria-label="Go Back">
-    <svg height="22" width="28" viewBox="0 0 30 30">
-      <polyline points="20,6 10,15 20,24"
-                fill="none"
-                stroke="#193c10"
-                stroke-width="4"
-                stroke-linecap="round"
-                stroke-linejoin="round"/>
-    </svg>
-  </button>
+<button class="back-arrow" onclick="window.location.href='UserFishes.html'">
+  <svg viewBox="0 0 30 30" width="100%" height="100%">
+    <polyline points="20,6 10,15 20,24"
+      fill="none" stroke="#262A23" stroke-width="4"
+      stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
 
-  <div class="container">
-    <div id="categoryTitle" class="category-header">Category</div>
-    <div id="fishGrid" class="fish-grid">
-      <!-- Placeholder cards (for layout testing) -->
-      <div class="fish-card">
-        <div class="fish-img"><img src="goldfish.jpg" alt="Goldfish"></div>
-        <div class="fish-label">Goldfish</div>
+<div class="container">
+
+  <!-- Flip card -->
+  <div class="flip-card" id="flipCard">
+    <div class="flip-inner">
+      <div class="flip-front">
+        <img id="fishImage" src="placeholder.jpg">
       </div>
-      <div class="fish-card">
-        <div class="fish-img"><img src="betta.jpg" alt="Betta"></div>
-        <div class="fish-label">Betta</div>
-      </div>
-      <div class="fish-card">
-        <div class="fish-img"><img src="guppy.jpg" alt="Guppy"></div>
-        <div class="fish-label">Guppy</div>
+      <div class="flip-back">
+        <img id="fishQR" class="qr-img">
+        <p>Scan Me!</p>
       </div>
     </div>
-    <div class="status-msg" id="statusMsg"></div>
   </div>
 
-  <script>
-    const API_BASE = "http://localhost:5000";
-    const msgEl = document.getElementById("statusMsg");
-    const grid = document.getElementById("fishGrid");
-    const title = document.getElementById("categoryTitle");
+  <div class="details">
+    <h2 id="fishName"></h2>
+    <h3><i id="scientificName"></i></h3>
+    <p><b>Category:</b> <span id="category"></span></p>
 
-    // Get category name from URL
-    const params = new URLSearchParams(window.location.search);
-    const categoryName = params.get("category") || "Category";
-    title.textContent = categoryName;
+    <p style="font-weight:bold; margin-top:1rem;">Description:</p>
+    <div class="green-box" id="description"></div>
+  </div>
 
-    async function loadFishes() {
-      try {
-        const res = await fetch(`${API_BASE}/api/fishes`);
-        if (!res.ok) throw new Error("Failed to load fishes");
-        const fishes = await res.json();
+  <div class="ai-section">
+    <label>Ask AI</label>
+    <textarea id="aiQuestion" placeholder="Ask something..."></textarea>
+    <button onclick="handleUniversalAI()">Chat with AI</button>
+    <div id="aiResponse"
+         style="background:#fff;padding:1rem;border-radius:12px;max-height:200px;overflow-y:auto;"></div>
+  </div>
 
-        // Filter fishes by selected category
-        const filtered = fishes.filter(f => f.category === categoryName);
-        renderFishes(filtered);
-      } catch (err) {
-        console.error(err);
-        showMessage("Error loading fishes", "error");
-      }
-    }
+</div>
 
-    function showMessage(msg, type="info") {
-      msgEl.textContent = msg;
-      msgEl.style.color = type === "error" ? "#b22222" : "#204d1e";
-      setTimeout(() => msgEl.textContent = "", 2000);
-    }
+<script>
+const API_BASE = "https://mygardenbook-backend.onrender.com";
+const params = new URLSearchParams(window.location.search);
+const fishId = params.get("id");
 
-    function renderFishes(fishes) {
-      // If no fishes in this category, keep placeholders
-      if (!fishes || fishes.length === 0) return;
+function pick(...fields){ for(const f of fields){ if(f) return f; } return null; }
 
-      grid.innerHTML = fishes.map(f => `
-        <div class="fish-card" onclick="window.location.href='UserEachFish.html?id=${encodeURIComponent(f.id)}'">
-          <div class="fish-img">
-            ${f.image ? `<img src="${f.image}" alt="${f.commonName || f.name}">` : `<span style='font-size:1.8em; color:#4A771C;'>&#128031;</span>`}
-          </div>
-          <div class="fish-label">${f.commonName || f.name}</div>
-        </div>
-      `).join("");
-    }
+function resolveImg(src){
+  if (!src) return null;
+  if (src.startsWith("http")) return src;
+  if (src.startsWith("/")) return API_BASE + src;
+  return src;
+}
 
-    loadFishes();
-  </script>
+async function loadFish(){
+  try {
+    const res = await fetch(`${API_BASE}/api/fishes/${fishId}`);
+    const fish = await res.json();
+
+    document.getElementById("fishImage").src =
+      resolveImg(pick(fish.image, fish.image_url, fish.img)) || "placeholder.jpg";
+
+    document.getElementById("fishQR").src =
+      resolveImg(pick(fish.qr_code_url, fish.qrCode)) || "qr_placeholder.png";
+
+    fishName.textContent = pick(fish.name, fish.commonName) || "Unnamed Fish";
+    scientificName.textContent = pick(fish.scientific_name, fish.scientificName) || "";
+    category.textContent = pick(fish.category, fish.categoryName) || "N/A";
+    description.textContent = pick(fish.description, fish.desc, fish.details) || "No description available.";
+  }
+  catch (err){
+    description.textContent = "Failed to load fish.";
+  }
+}
+
+document.getElementById("flipCard").onclick =
+  () => document.getElementById("flipCard").classList.toggle("flipped");
+
+loadFish();
+</script>
+
+<script src="js/chat.js"></script>
 </body>
 </html>

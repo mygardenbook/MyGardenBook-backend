@@ -100,6 +100,7 @@
     .category-card:hover, .category-card:focus {
       background: #8BC48A;
       box-shadow: 0 8px 18px rgba(32,71,36,0.12);
+      outline: none;
     }
     .category-card.delete-select { border: 3px solid #e46b66; background: #e9bdbb; }
     .category-img {
@@ -164,93 +165,122 @@
         </svg>
       </button>
       <div class="action-btn-group">
-        <button class="action-btn" id="addBtn" onclick="addCategory()">Add</button>
-        <button class="action-btn" id="deleteBtn" onclick="toggleDeleteMode()">Delete</button>
+        <button class="action-btn" id="addBtn" type="button">Add</button>
+        <button class="action-btn" id="deleteBtn" type="button">Delete</button>
       </div>
     </div>
 
     <div class="categories-header">Plant Categories</div>
     <div class="delete-btn-bar" id="deleteInfo">Tap categories to select. When ready, click Delete again.</div>
-    <div class="status-msg" id="statusMsg"></div>
-    <div class="categories-grid" id="categoriesGrid"></div>
+    <div class="status-msg" id="statusMsg" aria-live="polite"></div>
+    <div class="categories-grid" id="categoriesGrid" role="list"></div>
   </div>
 
   <script>
-    const API_BASE = "http://localhost:5000";
+    // Use current origin so the page works on production & local
+    const API_BASE = window.location.origin;
     let categories = [];
     let deleteMode = false;
     let deleteSelected = [];
     const msgEl = document.getElementById("statusMsg");
+    const gridEl = document.getElementById("categoriesGrid");
+    const deleteInfoEl = document.getElementById("deleteInfo");
+    const addBtn = document.getElementById("addBtn");
+    const deleteBtn = document.getElementById("deleteBtn");
 
-    function showMessage(msg, type="info") {
+    function showMessage(msg, type="info", duration=2000) {
       msgEl.textContent = msg;
       msgEl.style.color = type === "error" ? "#b22222" : type === "success" ? "#2e7d32" : "#204d1e";
-      setTimeout(() => msgEl.textContent = "", 2000);
+      if (duration > 0) setTimeout(() => { if (msgEl.textContent === msg) msgEl.textContent = ""; }, duration);
     }
 
     async function loadCategories() {
       try {
         const res = await fetch(`${API_BASE}/api/categories`);
-        if (!res.ok) throw new Error("Failed to load categories");
+        if (!res.ok) throw new Error(`Status ${res.status}`);
         categories = await res.json();
         renderCategories();
       } catch (err) {
-        console.error(err);
+        console.error("loadCategories:", err);
         showMessage("Error loading categories", "error");
       }
     }
 
-    function goBack() { window.history.back(); }
-
+    // add category (prompt + POST)
     async function addCategory() {
       const name = prompt("Enter new category name:");
       if (!name || !name.trim()) return;
+      const trimmed = name.trim();
       try {
         const res = await fetch(`${API_BASE}/api/categories/add`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: name.trim() }),
+          body: JSON.stringify({ name: trimmed }),
         });
-        if (res.ok) {
-          showMessage("Category added!", "success");
-          await loadCategories();
-        } else showMessage("Failed to add category", "error");
+        if (!res.ok) {
+          const errText = await res.text().catch(()=>"");
+          showMessage(errText || "Failed to add category", "error");
+          return;
+        }
+        const data = await res.json().catch(()=>({}));
+        showMessage((data && data.message) ? data.message : "Category added!", "success");
+        await loadCategories();
       } catch (err) {
-        console.error(err);
+        console.error("addCategory:", err);
         showMessage("Error adding category", "error");
       }
     }
 
+    // toggle delete mode on/off
     async function toggleDeleteMode() {
-      const btn = document.getElementById("deleteBtn");
       if (!deleteMode) {
         deleteMode = true;
         deleteSelected = [];
-        btn.classList.add("selected");
+        deleteBtn.classList.add("selected");
         document.body.classList.add("delete-mode");
-        showMessage("Select categories to delete");
-      } else {
-        if (deleteSelected.length > 0) {
-          try {
-            const res = await fetch(`${API_BASE}/api/categories/delete`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ names: deleteSelected }),
-            });
-            if (res.ok) {
-              showMessage("Deleted successfully!", "success");
-              await loadCategories();
-            } else showMessage("Failed to delete", "error");
-          } catch (err) {
-            console.error(err);
-            showMessage("Error deleting", "error");
-          }
-        }
-        deleteMode = false;
-        deleteSelected = [];
-        btn.classList.remove("selected");
-        document.body.classList.remove("delete-mode");
+        showMessage("Select categories to delete", "info");
+        renderCategories();
+        return;
       }
+
+      // confirm if there are selected items
+      if (deleteSelected.length === 0) {
+        // simply exit delete mode
+        exitDeleteMode();
+        return;
+      }
+
+      if (!confirm(`Delete ${deleteSelected.length} selected category(ies)? This cannot be undone.`)) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/categories/delete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ names: deleteSelected }),
+        });
+        if (!res.ok) {
+          const errText = await res.text().catch(()=>"");
+          showMessage(errText || "Failed to delete", "error");
+        } else {
+          const data = await res.json().catch(()=>({}));
+          showMessage((data && data.message) ? data.message : "Deleted successfully!", "success");
+          await loadCategories();
+        }
+      } catch (err) {
+        console.error("toggleDeleteMode (delete):", err);
+        showMessage("Error deleting", "error");
+      } finally {
+        exitDeleteMode();
+      }
+    }
+
+    function exitDeleteMode() {
+      deleteMode = false;
+      deleteSelected = [];
+      deleteBtn.classList.remove("selected");
+      document.body.classList.remove("delete-mode");
       renderCategories();
     }
 
@@ -264,31 +294,83 @@
     }
 
     function openCategory(name) {
-      if (deleteMode) return toggleCategoryDeleteSelect(name);
-      window.location.href = `AdminEachPlantCategory.html?category=${encodeURIComponent(name)}`;
+      // if delete mode is active -> toggle selection
+      if (deleteMode) {
+        toggleCategoryDeleteSelect(name);
+        return;
+      }
+      // normal navigation
+      const encoded = encodeURIComponent(name);
+      window.location.href = `AdminEachPlantCategory.html?category=${encoded}`;
     }
 
+    // Build DOM elements (safer than building innerHTML)
     function renderCategories() {
-      const grid = document.getElementById("categoriesGrid");
-      grid.innerHTML = categories.map(cat => `
-        <div class="category-card${deleteMode && deleteSelected.includes(cat.name) ? " delete-select" : ""}"
-          tabindex="0"
-          onclick="openCategory('${cat.name}')"
-          aria-label="${cat.name}"
-          title="${cat.name}">
-          <div class="category-img">
-            ${
-              cat.img
-                ? `<img src="${cat.img}" alt="${cat.name}" style="width:98%;height:98%;object-fit:cover;border-radius:12px;">`
-                : `<span class="category-img-icon">&#127793;</span>`
-            }
-          </div>
-          <div class="category-label">${cat.name}</div>
-        </div>
-      `).join("");
-      document.getElementById("deleteInfo").style.display = deleteMode ? "block" : "none";
+      gridEl.innerHTML = "";
+      deleteInfoEl.style.display = deleteMode ? "block" : "none";
+
+      if (!categories || categories.length === 0) {
+        // keep grid empty (you can leave placeholders if you want)
+        gridEl.innerHTML = `<p style="grid-column: 1 / -1; color:#3b3b3b; text-align:center;">No categories yet.</p>`;
+        return;
+      }
+
+      categories.forEach(cat => {
+        const card = document.createElement("div");
+        card.className = "category-card";
+        card.tabIndex = 0;
+        card.setAttribute("role", "listitem");
+        card.setAttribute("aria-label", cat.name || "category");
+
+        // mark selected in delete mode
+        if (deleteMode && deleteSelected.includes(cat.name)) {
+          card.classList.add("delete-select");
+          card.setAttribute("aria-pressed", "true");
+        } else {
+          card.setAttribute("aria-pressed", "false");
+        }
+
+        // click behavior
+        card.addEventListener("click", () => openCategory(cat.name));
+        card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openCategory(cat.name); } });
+
+        // image container
+        const imgWrap = document.createElement("div");
+        imgWrap.className = "category-img";
+
+        if (cat.img) {
+          const img = document.createElement("img");
+          // use absolute or relative paths as provided by backend
+          img.src = cat.img;
+          img.alt = cat.name || "category image";
+          img.style.width = "98%";
+          img.style.height = "98%";
+          img.style.objectFit = "cover";
+          img.style.borderRadius = "12px";
+          imgWrap.appendChild(img);
+        } else {
+          const span = document.createElement("span");
+          span.className = "category-img-icon";
+          span.textContent = "🌿";
+          imgWrap.appendChild(span);
+        }
+
+        // label
+        const label = document.createElement("div");
+        label.className = "category-label";
+        label.textContent = cat.name || "Unnamed";
+
+        card.appendChild(imgWrap);
+        card.appendChild(label);
+        gridEl.appendChild(card);
+      });
     }
 
+    // attach handlers
+    addBtn.addEventListener("click", addCategory);
+    deleteBtn.addEventListener("click", toggleDeleteMode);
+
+    // initial load
     loadCategories();
   </script>
 </body>

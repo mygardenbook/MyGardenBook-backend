@@ -10,33 +10,26 @@
   body {
     margin: 0;
     padding: 0;
-    font-family: 'Baloo 2', 'Kalam', 'Arial', sans-serif;
+    font-family: 'Baloo 2','Kalam','Arial',sans-serif;
     background: url('Bg.png') no-repeat center center fixed;
     background-size: cover;
     position: relative;
     overflow-x: hidden;
   }
-
   .overlay {
-    position: fixed;
-    top: 0; left: 0;
+    position: fixed; top: 0; left: 0;
     width: 100%; height: 100%;
     background: rgba(255,255,255,0.7);
     z-index: 1;
   }
-
   .back-arrow {
     position: fixed;
-    top: 16px;
-    left: 16px;
+    top: 16px; left: 16px;
     z-index: 5;
-    background: none;
-    border: none;
+    background: none; border: none;
     cursor: pointer;
-    width: 36px;
-    height: 36px;
+    width: 36px; height: 36px;
   }
-
   h1 {
     background: rgba(143,216,113,0.6);
     color: #262A23;
@@ -50,71 +43,41 @@
     position: relative;
     z-index: 2;
   }
-
   .plant-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2,1fr);
     gap: 1.5rem;
     justify-items: center;
-    width: 100%;
     max-width: 420px;
     margin: 0 auto 3rem;
     position: relative;
     z-index: 2;
   }
-
   .plant-card {
     background: rgba(143,216,113,0.5);
     border-radius: 20px;
     box-shadow: 0 4px 18px #B7DAB8cc;
+    padding: 0.8rem;
+    width: 130px;
+    cursor: pointer;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0.8rem;
-    transition: transform 0.2s ease, box-shadow 0.2s;
-    width: 130px;
-    cursor: pointer;
   }
-
-  .plant-card:hover {
-    transform: scale(1.03);
-    box-shadow: 0 6px 20px #B7DAB8;
-  }
-
   .plant-img {
-    width: 70px;
-    height: 70px;
-    object-fit: cover;
+    width: 70px; height: 70px;
     border-radius: 10px;
-    background: #fff;
+    object-fit: cover;
+    background: white;
   }
-
   .plant-name {
     background: #204d1e;
-    color: #fff;
-    font-size: 0.85rem;
-    border-radius: 16px;
+    color: white;
     padding: 0.3rem 0.8rem;
+    border-radius: 16px;
     margin-top: 0.6rem;
+    font-size: 0.85rem;
     text-align: center;
-  }
-
-  .no-results {
-    text-align: center;
-    font-size: 1rem;
-    color: #2b4022;
-    font-weight: 500;
-    margin-top: 1.5rem;
-  }
-
-  @media (max-width: 600px) {
-    .plant-grid {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1.2rem;
-      max-width: 90%;
-    }
-    h1 { font-size: 1.6rem; margin-top: 4rem; }
-    .plant-card { width: 110px; }
   }
 </style>
 </head>
@@ -122,63 +85,75 @@
 <body>
   <div class="overlay"></div>
 
-  <button class="back-arrow" onclick="window.location.href='AdminPlantCategories.html'" aria-label="Go back">
+  <button class="back-arrow" onclick="window.location.href='AdminPlantCategories.html'">
     <svg viewBox="0 0 30 30" width="100%" height="100%">
       <polyline points="20,6 10,15 20,24"
-                fill="none" stroke="#262A23"
-                stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        fill="none" stroke="#262A23" stroke-width="4"
+        stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
   </button>
 
   <h1 id="categoryTitle">Category</h1>
 
   <div class="plant-grid" id="plantGrid"></div>
-  <div class="no-results" id="noResults" style="display:none;">No plants found in this category.</div>
+  <div id="noResults" style="text-align:center; margin-top:1rem; display:none; color:#204d1e;">
+    No plants found in this category.
+  </div>
 
-  <script>
-    const API_BASE = "http://localhost:5000";
-    const params = new URLSearchParams(window.location.search);
-    const category = params.get("category");
-    const titleEl = document.getElementById("categoryTitle");
-    const grid = document.getElementById("plantGrid");
-    const noResults = document.getElementById("noResults");
+<script>
+  const API_BASE = location.hostname.includes("localhost")
+    ? "http://localhost:5000"
+    : "https://mygardenbook-backend.onrender.com";
 
-    titleEl.textContent = category || "Category";
+  const params = new URLSearchParams(location.search);
+  const category = params.get("category") || "Category";
 
-    async function loadPlants() {
-      try {
-        const res = await fetch(`${API_BASE}/api/plants?category=${encodeURIComponent(category)}`);
-        if (!res.ok) throw new Error("Failed to load plants");
-        const plants = await res.json();
-        grid.innerHTML = "";
-        if (plants.length === 0) {
-          noResults.style.display = "block";
-          return;
-        }
-        noResults.style.display = "none";
+  document.getElementById("categoryTitle").textContent = category;
 
-        plants.forEach(p => {
-          const card = document.createElement("div");
-          card.className = "plant-card";
-          card.onclick = () => openEditPage(p.id);
-          card.innerHTML = `
-            <img src="${p.image || 'placeholder.jpg'}" class="plant-img" alt="${p.name}">
-            <div class="plant-name">${p.name}</div>
-          `;
-          grid.appendChild(card);
-        });
-      } catch (err) {
-        console.error(err);
-        noResults.style.display = "block";
-        noResults.textContent = "Error loading plants.";
+  async function loadPlants() {
+    try {
+      const res = await fetch(`${API_BASE}/api/plants`);
+      const allPlants = await res.json();
+
+      const filtered = allPlants.filter(
+        p => p.category && p.category.toLowerCase() === category.toLowerCase()
+      );
+
+      const grid = document.getElementById("plantGrid");
+      const noRes = document.getElementById("noResults");
+
+      grid.innerHTML = "";
+
+      if (filtered.length === 0) {
+        noRes.style.display = "block";
+        return;
       }
-    }
 
-    function openEditPage(id) {
-     window.location.href = 'AdminAddPlant.html?id=' + encodeURIComponent(id);
-    }
+      noRes.style.display = "none";
 
-    loadPlants();
-  </script>
+      filtered.forEach(p => {
+        const card = document.createElement("div");
+        card.className = "plant-card";
+        card.onclick = () => {
+          location.href = `AdminEditPlant.html?id=${encodeURIComponent(p.id)}`;
+        };
+
+        card.innerHTML = `
+          <img class="plant-img" src="${p.image || 'placeholder.jpg'}" alt="${p.commonName}">
+          <div class="plant-name">${p.commonName}</div>
+        `;
+
+        grid.appendChild(card);
+      });
+    } catch (err) {
+      console.error(err);
+      document.getElementById("noResults").textContent = "Error loading plants.";
+      document.getElementById("noResults").style.display = "block";
+    }
+  }
+
+  loadPlants();
+</script>
+
 </body>
 </html>

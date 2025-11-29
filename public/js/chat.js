@@ -7,7 +7,7 @@
 (function () {
 
   // Auto-detect API base (website origin)
-  const API_BASE = window.location.origin;
+   const API_BASE = "https://mygardenbook-backend.onrender.com";
 
   /* -----------------------------------------------------------
      Build contextual details for Groq (plant/fish details)

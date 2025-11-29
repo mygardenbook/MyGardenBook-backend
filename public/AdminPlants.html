@@ -142,131 +142,138 @@
   </div>
 
   <script>
-    const API_BASE = "http://localhost:5000";
-    let deleteMode = false;
-    let selectedPlants = [];
-    const statusMsg = document.getElementById("statusMsg");
+  const API_BASE = "https://mygardenbook-backend.onrender.com";
+  let deleteMode = false;
+  let selectedPlantId = null;
 
-    function showMessage(msg, type = "success") {
-      statusMsg.textContent = msg;
-      statusMsg.style.color = type === "error" ? "#b22222" : "#2e7d32";
-      setTimeout(() => (statusMsg.textContent = ""), 2500);
+  const statusMsg = document.getElementById("statusMsg");
+
+  function showMessage(msg, type = "success") {
+    statusMsg.textContent = msg;
+    statusMsg.style.color = type === "error" ? "#b22222" : "#2e7d32";
+    setTimeout(() => (statusMsg.textContent = ""), 2500);
+  }
+
+  // 🌿 Load all plants
+  async function loadPlants() {
+    try {
+      const res = await fetch(`${API_BASE}/api/plants`);
+      const plants = await res.json();
+      renderPlants(plants);
+    } catch (err) {
+      console.error("Error loading plants:", err);
+      showMessage("Error loading plants", "error");
+    }
+  }
+
+  // 🧩 Render plant cards
+  function renderPlants(plants) {
+    const list = document.getElementById("plantList");
+    list.innerHTML = "";
+
+    if (!plants || plants.length === 0) {
+      list.innerHTML = "<p style='text-align:center; color:#3b3b3b;'>No plants added yet.</p>";
+      return;
     }
 
-    // 🌿 Load all plants
-    async function loadPlants() {
-      try {
-        const res = await fetch(`${API_BASE}/api/plants`);
-        if (!res.ok) throw new Error("Failed to load plants");
-        const plants = await res.json();
-        renderPlants(plants);
-      } catch (err) {
-        console.error("Error loading plants:", err);
-        showMessage("Error loading plants", "error");
-      }
+    plants.forEach(p => {
+      const card = document.createElement("div");
+      card.className = "plant-card";
+      card.dataset.id = p.id;
+      card.dataset.category = p.category || "";
+
+      card.innerHTML = `
+        <img src="${p.image_url || 'placeholder.jpg'}" class="plant-img" alt="${p.name}">
+        <div class="plant-name">${p.name}</div>
+      `;
+
+      card.onclick = () => handleCardClick(p.id, card);
+      list.appendChild(card);
+    });
+  }
+
+  // 🌱 Handle edit/delete
+  function handleCardClick(id, card) {
+    if (!deleteMode) {
+      window.location.href = `AdminAddEditPlant.html?id=${id}`;
+      return;
     }
 
-    // 🧩 Render plant cards
-    function renderPlants(plants) {
-      const list = document.getElementById("plantList");
-      list.innerHTML = "";
+    // Delete mode toggle
+    document.querySelectorAll(".plant-card").forEach(c => c.classList.remove("selected"));
+    card.classList.add("selected");
+    selectedPlantId = id;
+  }
 
-      if (!plants || plants.length === 0) {
-        list.innerHTML = "<p style='text-align:center; color:#3b3b3b;'>No plants added yet.</p>";
-        return;
-      }
+  // 🗑 Delete selected plant
+  async function toggleDeleteMode() {
+    const btn = document.getElementById("deleteBtn");
 
-      plants.forEach(p => {
-        const card = document.createElement("div");
-        card.className = "plant-card";
-        card.dataset.id = p.id;
-        card.dataset.category = p.category || "";
-        card.innerHTML = `
-          <img src="${p.image || 'placeholder.jpg'}" class="plant-img" alt="${p.name}">
-          <div class="plant-name">${p.name}</div>
-        `;
-        card.onclick = () => handleCardClick(p.id, card);
-        list.appendChild(card);
+    // Turn ON delete mode
+    if (!deleteMode) {
+      deleteMode = true;
+      selectedPlantId = null;
+      btn.style.background = "#E57373";
+      btn.textContent = "Confirm Delete";
+      showMessage("Tap a plant to delete", "info");
+      return;
+    }
+
+    // Confirm Delete
+    if (!selectedPlantId) {
+      showMessage("No plant selected", "error");
+      resetDeleteMode();
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/plants/${selectedPlantId}/delete`, {
+        method: "DELETE"
       });
-    }
 
-    // 🌱 Handle edit/delete
-    function handleCardClick(id, card) {
-      if (deleteMode) {
-        card.classList.toggle("selected");
-        if (selectedPlants.includes(id)) {
-          selectedPlants = selectedPlants.filter(x => x !== id);
-        } else {
-          selectedPlants.push(id);
-        }
+      const data = await res.json();
+
+      if (res.ok) {
+        showMessage("Plant deleted successfully", "success");
+        loadPlants();
       } else {
-        window.location.href = `AdminAddEditPlant.html?id=${id}`;
+        showMessage("Failed to delete plant", "error");
       }
+    } catch (err) {
+      console.error("Error deleting plant:", err);
+      showMessage("Error deleting plant", "error");
     }
 
-    // 🗑 Toggle + delete
-    async function toggleDeleteMode() {
-      const btn = document.getElementById("deleteBtn");
+    resetDeleteMode();
+  }
 
-      if (!deleteMode) {
-        deleteMode = true;
-        selectedPlants = [];
-        btn.style.background = "#E57373";
-        btn.textContent = "Confirm Delete";
-        showMessage("Tap plants to select for deletion", "info");
-        return;
-      }
+  function resetDeleteMode() {
+    deleteMode = false;
+    selectedPlantId = null;
 
-      if (selectedPlants.length === 0) {
-        showMessage("No plants selected", "error");
-        resetDeleteButton();
-        return;
-      }
+    const btn = document.getElementById("deleteBtn");
+    btn.style.background = "#BFE7BC";
+    btn.textContent = "Delete Plant";
 
-      try {
-        const res = await fetch(`${API_BASE}/api/plants`, {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ids: selectedPlants }),
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          showMessage("✅ Deleted successfully!");
-          loadPlants();
-        } else {
-          showMessage("❌ Failed to delete", "error");
-        }
-      } catch (err) {
-        console.error("Error deleting plants:", err);
-        showMessage("❌ Error deleting plants", "error");
-      }
+    document.querySelectorAll(".plant-card").forEach(c => c.classList.remove("selected"));
+  }
 
-      resetDeleteButton();
-    }
+  document.getElementById("deleteBtn").addEventListener("click", toggleDeleteMode);
 
-    function resetDeleteButton() {
-      deleteMode = false;
-      selectedPlants = [];
-      const btn = document.getElementById("deleteBtn");
-      btn.style.background = "#BFE7BC";
-      btn.textContent = "Delete Plant";
-    }
+  // 🔍 Search filter
+  function filterPlants() {
+    const input = document.getElementById("plantSearch").value.toLowerCase();
+    const cards = document.querySelectorAll(".plant-card");
 
-    document.getElementById("deleteBtn").addEventListener("click", toggleDeleteMode);
+    cards.forEach(card => {
+      const name = card.querySelector(".plant-name").textContent.toLowerCase();
+      const category = (card.dataset.category || "").toLowerCase();
+      card.style.display = (name.includes(input) || category.includes(input)) ? "" : "none";
+    });
+  }
 
-    // 🔍 Filter
-    function filterPlants() {
-      const input = document.getElementById("plantSearch").value.toLowerCase();
-      const cards = document.querySelectorAll(".plant-card");
-      cards.forEach(card => {
-        const name = card.querySelector(".plant-name").textContent.toLowerCase();
-        const category = (card.dataset.category || "").toLowerCase();
-        card.style.display = (name.includes(input) || category.includes(input)) ? "" : "none";
-      });
-    }
+  loadPlants();
+</script>
 
-    // 🟢 Initialize
-    loadPlants();
-  </script>
 </body>
 </html>

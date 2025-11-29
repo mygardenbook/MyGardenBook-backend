@@ -150,7 +150,7 @@
 
     <div class="categories-header">Plant Categories</div>
     <div class="categories-grid" id="categoriesGrid">
-      <!-- 🌱 Placeholder category cards for layout testing -->
+      <!-- placeholders kept until backend returns categories -->
       <div class="category-card">
         <div class="category-img">
           <img src="placeholder.jpg" alt="Herbs">
@@ -174,55 +174,67 @@
   </div>
 
   <script>
-    const API_BASE = "http://localhost:5000";
+    const API_BASE = "https://mygardenbook-backend.onrender.com";
     const msgEl = document.getElementById("statusMsg");
+    const grid = document.getElementById("categoriesGrid");
+
+    function showMessage(msg, type="info") {
+      msgEl.textContent = msg;
+      msgEl.style.color = type === "error" ? "#b22222" : "#204d1e";
+      setTimeout(() => msgEl.textContent = "", 2500);
+    }
+
+    // Resolve image path: if server returned absolute path starting with '/', prefix API_BASE
+    function resolveImg(src) {
+      if (!src) return null;
+      if (src.startsWith("http://") || src.startsWith("https://")) return src;
+      if (src.startsWith("/")) return API_BASE.replace(/\/$/, "") + src;
+      return src; // could be a data URI or a relative path hosted in frontend
+    }
 
     async function loadPlants() {
       try {
         const res = await fetch(`${API_BASE}/api/plants`);
         if (!res.ok) throw new Error("Failed to load plants");
         const plants = await res.json();
-        renderCategories(plants);
+        renderCategories(plants || []);
       } catch (err) {
         console.error(err);
         showMessage("Error loading categories", "error");
       }
     }
 
-    function showMessage(msg, type="info") {
-      msgEl.textContent = msg;
-      msgEl.style.color = type === "error" ? "#b22222" : "#204d1e";
-      setTimeout(() => msgEl.textContent = "", 2000);
-    }
-
     function renderCategories(plants) {
-      const grid = document.getElementById("categoriesGrid");
+      // Build map category -> image (first image found)
       const categories = {};
-
-      plants.forEach(p => {
-        if (p.category && !categories[p.category]) {
-          categories[p.category] = p.image || "";
+      (plants || []).forEach(p => {
+        const cat = p.category || p.category_name || p.categoryName;
+        if (!cat) return;
+        if (!categories[cat]) {
+          // Try several image field names
+          const img = p.image || p.image_url || p.imageUrl || p.img || p.photo || p.picture || p.imagePath || p.image_path;
+          categories[cat] = img || "";
         }
       });
 
-      const categoryEntries = Object.entries(categories);
-      if (categoryEntries.length === 0) {
-        // Keep placeholders visible when no data from backend yet
+      const entries = Object.entries(categories);
+      if (entries.length === 0) {
+        // keep placeholders
         return;
       }
 
-      grid.innerHTML = categoryEntries.map(([cat, img]) => `
-        <div class="category-card" onclick="window.location.href='UserEachPlantCategory.html?category=${encodeURIComponent(cat)}'">
-          <div class="category-img">
-            ${
-              img
-                ? `<img src="${img}" alt="${cat}">`
-                : `<span style='font-size:1.8em; color:#4A771C;'>&#127793;</span>`
-            }
+      grid.innerHTML = entries.map(([cat, img]) => {
+        const resolved = resolveImg(img);
+        const imgHtml = resolved
+          ? `<img src="${resolved}" alt="${cat}">`
+          : `<span style='font-size:1.8em; color:#4A771C;'>&#127793;</span>`;
+        return `
+          <div class="category-card" onclick="location.href='UserEachPlantCategory.html?category=${encodeURIComponent(cat)}'">
+            <div class="category-img">${imgHtml}</div>
+            <div class="category-label">${cat}</div>
           </div>
-          <div class="category-label">${cat}</div>
-        </div>
-      `).join("");
+        `;
+      }).join("");
     }
 
     loadPlants();

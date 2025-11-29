@@ -4,6 +4,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>User Page</title>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Kalam:wght@700&display=swap" rel="stylesheet">
+
   <style>
     /* Reset and font setup */
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -15,7 +16,6 @@
       overflow: hidden;
     }
 
-    /* Match admin visual background overlay */
     .background-overlay {
       position: fixed;
       z-index: 0;
@@ -38,7 +38,6 @@
       z-index: 1;
     }
 
-    /* Consistent back-arrow styling */
     .back-arrow {
       position: absolute;
       top: 1.8rem;
@@ -59,7 +58,6 @@
       stroke-width: 4;
     }
 
-    /* Container */
     .container {
       position: relative;
       z-index: 2;
@@ -72,7 +70,6 @@
       text-align: center;
     }
 
-    /* Button group */
     .buttons-group {
       display: flex;
       flex-direction: column;
@@ -81,7 +78,6 @@
       gap: 2.2rem;
     }
 
-    /* Menu buttons — perfectly match admin button style */
     .menu-btn {
       background: #BFE7BC;
       border: none;
@@ -92,7 +88,6 @@
       min-width: 280px;
       padding: 1rem 2rem;
       text-align: center;
-      outline: none;
       cursor: pointer;
       transition: background 0.2s ease, transform 0.15s ease;
       box-shadow: 0 6px 18px #bfbfbf41;
@@ -119,12 +114,14 @@
     }
   </style>
 </head>
+
 <body>
   <div class="background-overlay"></div>
 
   <button class="back-arrow" onclick="window.location.href='Login.html'" aria-label="Go back">
     <svg viewBox="0 0 30 30" width="100%" height="100%">
-      <polyline points="20,6 10,15 20,24" fill="none" stroke="black" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <polyline points="20,6 10,15 20,24" fill="none" stroke="black"
+                stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
   </button>
 
@@ -135,9 +132,20 @@
     </div>
   </div>
 
-  <script src="scripts/session.js"></script>
+  <!-- Correct path for session script -->
+  <script src="js/session.js"></script>
+
   <script>
-    checkSession("user"); // only user can open
+    // Ensure user is logged in AND is a normal user
+    const role = localStorage.getItem("role");
+
+    if (!role) {
+      window.location.href = "Login.html";
+    } else if (role !== "user") {
+      // Prevent admin from entering accidentally
+      window.location.href = "Admin.html";
+    }
   </script>
+
 </body>
 </html>

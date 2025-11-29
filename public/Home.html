@@ -18,7 +18,6 @@
       overflow: hidden;
     }
 
-    /* White overlay (70% opacity) */
     body::before {
       content: "";
       position: fixed;
@@ -50,10 +49,9 @@
       margin-bottom: 2.5rem;
     }
 
-    /* Translucent green box with crisp corners (same as other pages) */
     .login-box {
       background: rgba(143, 216, 113, 0.5);
-      border-radius: 20px; /* Matches other pages' elements */
+      border-radius: 20px;
       box-shadow: 0 4px 20px 2px #B7DAB8;
       padding: 2rem 3rem;
       display: flex;
@@ -64,7 +62,6 @@
       min-width: 270px;
     }
 
-    /* Button style matching the rest of your site */
     .login-btn {
       background: #BFE7BC;
       color: #262A23;
@@ -75,7 +72,6 @@
       font-family: 'Baloo 2', 'Kalam', cursive, sans-serif;
       cursor: pointer;
       min-width: 135px;
-      box-shadow: none;
       transition: background 0.2s, color 0.2s;
     }
 
@@ -100,6 +96,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <div class="title">My Garden Book</div>
@@ -107,5 +104,17 @@
       <button class="login-btn" onclick="window.location.href='Login.html'">Login</button>
     </div>
   </div>
+
+  <script>
+    // Auto redirect if user already logged in
+    const role = localStorage.getItem("role");
+
+    if (role === "admin") {
+      window.location.href = "Admin.html";
+    } else if (role === "user") {
+      window.location.href = "User.html";
+    }
+  </script>
+
 </body>
 </html>

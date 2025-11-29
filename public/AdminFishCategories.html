@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <title>Admin Fish Categories</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
-    /* 🎨 Your original CSS is fully preserved — no visual changes */
     body {
       margin: 0;
       font-family: Arial, sans-serif;
@@ -15,69 +15,195 @@
       position: relative;
       overflow-x: hidden;
     }
-    .bg-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255,255,255,0.64); z-index: 0; pointer-events: none; }
-    .container { position: relative; z-index: 1; max-width: 520px; margin: 25px auto 40px auto; padding: 0 4vw 40px 4vw; }
-    .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; position: relative; }
-    .back-arrow { background: none; border: none; font-size: 1.6em; color: #193c10; cursor: pointer; margin-left: -2px; margin-right: 0; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; padding: 0; }
+    .bg-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(255,255,255,0.64);
+      z-index: 0; pointer-events: none;
+    }
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 520px;
+      margin: 25px auto 40px auto;
+      padding: 0 4vw 40px 4vw;
+    }
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 9px;
+    }
+    .back-arrow {
+      background: none;
+      border: none;
+      cursor: pointer;
+      width: 25px; height: 25px;
+      padding: 0;
+    }
     .action-btn-group { display: flex; gap: 16px; }
-    .action-btn { background: #A6DEAA; border: none; border-radius: 30px; padding: 15px 28px; font-size: 1.12em; font-weight: 400; color: #193c10; cursor: pointer; transition: background 0.14s, color 0.13s; box-shadow: 0 2px 12px 0 rgba(109,164,109,0.10); }
-    .action-btn:active, .action-btn.selected { background: #7bb37b; color: #fff; }
-    .categories-header { background: #A6DEAA; border-radius: 34px; text-align: center; font-size: 2.2em; font-weight: 500; color: #222e12; margin: 38px auto 25px auto; padding: 18px 0 17px 0; letter-spacing: 1px; width: 98%; }
-    .categories-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 22px 16px; justify-items: center; padding-bottom: 15px; }
-    .category-card { background: #A6DEAA; border-radius: 26px; width: 117px; height: 156px; padding: 15px 6px 10px 6px; display: flex; flex-direction: column; align-items: center; cursor: pointer; box-shadow: 0 2px 10px rgba(109,164,109,0.09); position: relative; border: 3px solid transparent; transition: box-shadow 0.1s, border-color 0.13s, background 0.11s; margin: 0; }
-    .category-card:hover, .category-card:focus { background: #8BC48A; box-shadow: 0 8px 18px rgba(32,71,36,0.12); }
-    .category-card.delete-select { border: 3px solid #e46b66; background: #e9bdbb; }
-    .category-img { width: 84px; height: 62px; background: #d3f6d1; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; overflow: hidden; }
-    .category-img-icon { font-size: 2em; color: #aadd9e; margin-top: 6px; margin-left: 2px; user-select: none; }
-    .category-label { background: #244a22; color: #fff; border-radius: 13px; font-size: 1em; width: 94%; padding: 10px 2px; margin-top: 17px; text-align: center; font-weight: 400; user-select: none; letter-spacing: 0.5px; }
-    .delete-btn-bar { margin: 19px auto -6px auto; text-align: center; color: #e46b66; font-weight: 600; font-size: 1.04em; display: none; }
-    .delete-mode .delete-btn-bar { display: block; }
-    @media (max-width:700px) { .container { max-width: 99vw; padding: 0 2vw; } .categories-header { font-size: 1.45em; padding: 10px 0; } .categories-grid { gap: 13px 2vw; } .category-card { width: 41vw; max-width:118px; height: 120px; min-width: 90px; } .category-img { width: 67px; height: 53px; } .category-label { font-size: .97em; border-radius: 8px; padding: 6px 2px; } }
-    #statusMsg { text-align:center; font-size:0.95em; color:#2e7d32; min-height:1.3em; margin-top:10px; }
+    .action-btn {
+      background: #A6DEAA;
+      border: none;
+      border-radius: 30px;
+      padding: 15px 28px;
+      font-size: 1.12em;
+      color: #193c10;
+      cursor: pointer;
+      transition: background 0.14s, color 0.13s;
+      box-shadow: 0 2px 12px rgba(109,164,109,0.10);
+    }
+    .action-btn.selected, .action-btn:active {
+      background: #7bb37b;
+      color: #fff;
+    }
+    .categories-header {
+      background: #A6DEAA;
+      border-radius: 34px;
+      text-align: center;
+      font-size: 2.2em;
+      color: #222e12;
+      margin: 38px auto 25px auto;
+      padding: 18px 0 17px 0;
+      letter-spacing: 1px;
+      width: 98%;
+    }
+    .categories-grid {
+      display: grid;
+      grid-template-columns: repeat(2,1fr);
+      gap: 22px 16px;
+      justify-items: center;
+      padding-bottom: 15px;
+    }
+    .category-card {
+      background: #A6DEAA;
+      border-radius: 26px;
+      width: 117px;
+      height: 186px;
+      padding: 15px 6px 10px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(109,164,109,0.09);
+      border: 3px solid transparent;
+      transition: background 0.11s, box-shadow 0.1s, border-color 0.13s;
+    }
+    .category-card:hover {
+      background: #8BC48A;
+      box-shadow: 0 8px 18px rgba(32,71,36,0.12);
+    }
+    .category-card.delete-select {
+      border: 3px solid #e46b66;
+      background: #e9bdbb;
+    }
+    .category-img {
+      width: 84px; height: 62px;
+      background: #d3f6d1;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      margin-bottom: 15px;
+    }
+    .category-label {
+      background: #244a22;
+      color: #fff;
+      border-radius: 13px;
+      width: 94%;
+      padding: 10px 2px;
+      text-align: center;
+      font-size: 1em;
+    }
+    .delete-btn-bar {
+      text-align: center;
+      color: #e46b66;
+      font-size: 1.04em;
+      font-weight: 600;
+      display: none;
+      margin: 19px auto -6px auto;
+    }
+    .status-msg {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 1rem;
+      min-height: 1em;
+      color: #204d1e;
+    }
+
+    @media (max-width:700px){
+      .categories-header { font-size: 1.45em; }
+      .category-card {
+        width: 41vw; height: 120px;
+      }
+      .category-img {
+        width: 67px; height: 53px;
+      }
+      .category-label {
+        padding: 6px 2px;
+        border-radius: 8px;
+      }
+    }
   </style>
 </head>
+
 <body>
   <div class="bg-overlay"></div>
+
   <div class="container">
+
     <div class="top-bar">
-      <button class="back-arrow" onclick="window.location.href='AdminFishes.html'" aria-label="Go Back">
-        <svg height="25" width="25" viewBox="0 0 30 30" aria-hidden="true">
-          <polyline points="20,6 10,15 20,24" fill="none" stroke="#193c10" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <button class="back-arrow" onclick="window.location.href='AdminFishes.html'">
+        <svg width="28" height="22" viewBox="0 0 30 30">
+          <polyline points="20,6 10,15 20,24"
+            fill="none" stroke="#193c10" stroke-width="4"
+            stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
+
       <div class="action-btn-group">
         <button class="action-btn" id="addBtn">Add</button>
         <button class="action-btn" id="deleteBtn">Delete</button>
       </div>
     </div>
+
     <div class="categories-header">Fish Categories</div>
-    <div class="delete-btn-bar" id="deleteInfo">Tap categories to select. When ready, click Delete again.</div>
-    <div id="statusMsg"></div>
+    <div class="delete-btn-bar" id="deleteInfo">Tap categories to select. Tap Delete again to confirm.</div>
+    <div class="status-msg" id="statusMsg"></div>
+
     <div class="categories-grid" id="categoriesGrid"></div>
   </div>
 
   <script>
-    const API_BASE = "http://localhost:5000";
+    // 🔥 Correct backend URL (auto-detect local vs production)
+    const API_BASE = location.hostname.includes("localhost")
+      ? "http://localhost:5000"
+      : "https://mygardenbook-backend.onrender.com";
+
     let categories = [];
     let deleteMode = false;
     let deleteSelected = [];
 
-    const statusMsg = document.getElementById("statusMsg");
-    const grid = document.getElementById("categoriesGrid");
+    const msgEl = document.getElementById("statusMsg");
+    const gridEl = document.getElementById("categoriesGrid");
+    const deleteInfoEl = document.getElementById("deleteInfo");
+    const addBtn = document.getElementById("addBtn");
+    const deleteBtn = document.getElementById("deleteBtn");
 
-    function goBack() { window.history.back(); }
-
-    function showMessage(msg, type = "info") {
-      statusMsg.textContent = msg;
-      statusMsg.style.color =
-        type === "error" ? "#b22222" : type === "success" ? "#2e7d32" : "#2a3d25";
-      setTimeout(() => (statusMsg.textContent = ""), 2500);
+    function showMessage(msg, type="info") {
+      msgEl.textContent = msg;
+      msgEl.style.color =
+        type === "error" ? "#b22222" :
+        type === "success" ? "#2e7d32" :
+        "#204d1e";
+      setTimeout(() => { msgEl.textContent = ""; }, 1800);
     }
 
     async function loadCategories() {
       try {
-        const res = await fetch(`${API_BASE}/categories`);
-        if (!res.ok) throw new Error("Unable to load categories");
+        const res = await fetch(`${API_BASE}/api/fish-categories`);
         categories = await res.json();
         renderCategories();
       } catch (err) {
@@ -87,118 +213,130 @@
     }
 
     async function addCategory() {
-      const input = document.createElement("input");
-      input.type = "text";
-      input.placeholder = "Enter new fish category name";
-      input.style.position = "fixed";
-      input.style.top = "20px";
-      input.style.left = "50%";
-      input.style.transform = "translateX(-50%)";
-      input.style.zIndex = "1000";
-      input.style.borderRadius = "8px";
-      input.style.border = "2px solid #244a22";
-      input.style.padding = "8px 10px";
-      input.style.fontSize = "1rem";
-      input.style.background = "#fff";
-      document.body.appendChild(input);
-      input.focus();
+      const name = prompt("Enter new category name:");
+      if (!name || !name.trim()) return;
 
-      input.addEventListener("keydown", async (e) => {
-        if (e.key === "Enter") {
-          const name = input.value.trim();
-          input.remove();
-          if (!name) return showMessage("Category name required", "error");
-          try {
-            const res = await fetch(`${API_BASE}/categories`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ name }),
-            });
-            const data = await res.json();
-            if (res.ok) {
-              showMessage("Category added", "success");
-              await loadCategories();
-            } else {
-              showMessage(data.message || "Error adding category", "error");
-            }
-          } catch (err) {
-            console.error(err);
-            showMessage("Failed to add category", "error");
-          }
-        }
-        if (e.key === "Escape") input.remove();
-      });
-    }
-
-    async function deleteCategory(id) {
       try {
-        const res = await fetch(`${API_BASE}/categories/${id}`, { method: "DELETE" });
-        const data = await res.json();
-        if (res.ok) {
-          showMessage("Category deleted", "success");
-          await loadCategories();
-        } else {
-          showMessage(data.message || "Error deleting category", "error");
-        }
+        await fetch(`${API_BASE}/api/fish-categories/add`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: name.trim() })
+        });
+
+        showMessage("Category added!", "success");
+        loadCategories();
       } catch (err) {
         console.error(err);
-        showMessage("Failed to delete category", "error");
+        showMessage("Error adding category", "error");
       }
     }
 
-    function toggleDeleteMode() {
-      if (deleteMode && deleteSelected.length > 0) {
-        deleteSelected.forEach((id) => deleteCategory(id));
+    async function toggleDeleteMode() {
+      if (!deleteMode) {
+        deleteMode = true;
         deleteSelected = [];
+        deleteBtn.classList.add("selected");
+        deleteInfoEl.style.display = "block";
+        showMessage("Select categories to delete");
+        renderCategories();
+        return;
       }
-      deleteMode = !deleteMode;
-      document.body.classList.toggle("delete-mode", deleteMode);
-      document.getElementById("deleteBtn").classList.toggle("selected", deleteMode);
-      document.getElementById("deleteInfo").style.display = deleteMode ? "block" : "none";
-      renderCategories();
+
+      if (deleteSelected.length === 0) {
+        exitDeleteMode();
+        return;
+      }
+
+      if (!confirm(`Delete ${deleteSelected.length} categories?`)) return;
+
+      try {
+        await fetch(`${API_BASE}/api/fish-categories/delete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ names: deleteSelected })
+        });
+
+        showMessage("Deleted successfully!", "success");
+        loadCategories();
+      } catch (err) {
+        console.error(err);
+        showMessage("Error deleting", "error");
+      }
+
+      exitDeleteMode();
     }
 
-    function toggleCategoryDeleteSelect(id) {
-      if (deleteSelected.includes(id)) {
-        deleteSelected = deleteSelected.filter((x) => x !== id);
-      } else {
-        deleteSelected.push(id);
-      }
+    function exitDeleteMode() {
+      deleteMode = false;
+      deleteSelected = [];
+      deleteBtn.classList.remove("selected");
+      deleteInfoEl.style.display = "none";
       renderCategories();
     }
 
     function openCategory(name) {
       if (deleteMode) {
-        const cat = categories.find((c) => c.name === name);
-        if (cat) toggleCategoryDeleteSelect(cat.id);
-      } else {
-        window.location.href =
-          "AdminEachFishCategory.html?category=" + encodeURIComponent(name);
+        toggleCategorySelect(name);
+        return;
       }
+      window.location.href = `AdminEachFishCategory.html?category=${encodeURIComponent(name)}`;
+    }
+
+    function toggleCategorySelect(name) {
+      if (deleteSelected.includes(name)) {
+        deleteSelected = deleteSelected.filter(n => n !== name);
+      } else {
+        deleteSelected.push(name);
+      }
+      renderCategories();
     }
 
     function renderCategories() {
-      grid.innerHTML = categories
-        .map(
-          (cat) => `
-          <div class="category-card${
-            deleteMode && deleteSelected.includes(cat.id) ? " delete-select" : ""
-          }" tabindex="0" onclick="openCategory('${cat.name}')">
-            <div class="category-img">
-              ${
-                cat.img
-                  ? `<img src="${cat.img}" alt="${cat.name}" style="width:98%;height:98%;object-fit:cover;border-radius:12px;">`
-                  : `<span class="category-img-icon">&#128031;</span>`
-              }
-            </div>
-            <div class="category-label">${cat.name}</div>
-          </div>`
-        )
-        .join("");
+      gridEl.innerHTML = "";
+
+      if (!categories.length) {
+        gridEl.innerHTML = `<p style="grid-column:1/-1; text-align:center;">No categories yet.</p>`;
+        return;
+      }
+
+      categories.forEach(cat => {
+        const card = document.createElement("div");
+        card.className = "category-card";
+
+        if (deleteMode && deleteSelected.includes(cat.name)) {
+          card.classList.add("delete-select");
+        }
+
+        card.onclick = () => openCategory(cat.name);
+
+        const imgWrap = document.createElement("div");
+        imgWrap.className = "category-img";
+
+        if (cat.img) {
+          const img = document.createElement("img");
+          img.src = cat.img;
+          img.style.width = "100%";
+          img.style.height = "100%";
+          img.style.objectFit = "cover";
+          imgWrap.appendChild(img);
+        } else {
+          imgWrap.textContent = "🐟";
+          imgWrap.style.fontSize = "2rem";
+          imgWrap.style.textAlign = "center";
+        }
+
+        const label = document.createElement("div");
+        label.className = "category-label";
+        label.textContent = cat.name;
+
+        card.appendChild(imgWrap);
+        card.appendChild(label);
+        gridEl.appendChild(card);
+      });
     }
 
-    document.getElementById("addBtn").addEventListener("click", addCategory);
-    document.getElementById("deleteBtn").addEventListener("click", toggleDeleteMode);
+    addBtn.onclick = addCategory;
+    deleteBtn.onclick = toggleDeleteMode;
 
     loadCategories();
   </script>

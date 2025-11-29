@@ -106,38 +106,38 @@
 </head>
 
 <body>
+
+  <!-- 🔐 ADMIN ACCESS CHECK (runs before anything renders) -->
+  <script>
+    const username = localStorage.getItem("username");
+    const role = localStorage.getItem("role");
+
+    if (!username || role !== "admin") {
+      window.location.href = "Login.html";
+    }
+  </script>
+
   <div class="overlay"></div>
   <button class="logout-btn" onclick="logout()">Logout</button>
 
   <div class="container">
     <h1>Admin Dashboard</h1>
+
     <button class="button" onclick="navigateTo('AdminPlants.html')">🌿 Plants</button>
     <button class="button" onclick="navigateTo('AdminFishes.html')">🐠 Fishes</button>
     <button class="button" id="downloadBtn" onclick="downloadData()">⬇️ Download Data</button>
+
     <div class="download-status" id="downloadStatus">Preparing download...</div>
   </div>
 
   <script>
-    const API_BASE = "http://localhost:5000";
-
-    // ✅ Ensure only admin access
-    document.addEventListener("DOMContentLoaded", () => {
-      const username = localStorage.getItem("username");
-      const role = localStorage.getItem("role");
-
-      console.log("🔍 Session check:", username, role);
-
-      if (!username || role !== "admin") {
-        alert("Access denied. Please log in as Admin.");
-        window.location.href = "Login.html";
-      }
-    });
+    const API_BASE = "https://mygardenbook-backend.onrender.com";
 
     function navigateTo(page) {
       window.location.href = page;
     }
 
-    // 📦 Export all data to Excel
+    // 📦 Download Excel export
     async function downloadData() {
       const status = document.getElementById("downloadStatus");
       status.style.display = "block";
@@ -149,29 +149,30 @@
 
         const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);
+
         const link = document.createElement("a");
         link.href = url;
         link.download = "MyGardenBook_Data.xlsx";
         document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
+        link.remove();
         window.URL.revokeObjectURL(url);
 
         status.textContent = "✅ Download complete!";
         setTimeout(() => (status.style.display = "none"), 2000);
+
       } catch (err) {
-        console.error("❌ Download failed:", err);
+        console.error(err);
         status.textContent = "❌ Failed to download data.";
         setTimeout(() => (status.style.display = "none"), 3000);
       }
     }
 
-    // 🚪 Logout
     function logout() {
       localStorage.clear();
-      alert("Logged out successfully.");
       window.location.href = "Login.html";
     }
   </script>
+
 </body>
 </html>

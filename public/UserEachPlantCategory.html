@@ -33,7 +33,6 @@
       padding: 0 4vw 40px 4vw;
     }
 
-    /* Back arrow */
     .back-arrow {
       background: none;
       border: none;
@@ -41,17 +40,16 @@
       cursor: pointer;
       width: 28px;
       height: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
       position: fixed;
       top: 20px;
       left: 20px;
       z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
     }
 
-    /* Title bar */
     .category-header {
       background: #A6DEAA;
       border-radius: 34px;
@@ -66,7 +64,6 @@
       max-width: 500px;
     }
 
-    /* Grid layout */
     .plant-grid {
       display: grid;
       grid-template-columns: repeat(2,1fr);
@@ -75,7 +72,6 @@
       padding-bottom: 15px;
     }
 
-    /* Card style (matches categories) */
     .plant-card {
       background: #A6DEAA;
       border-radius: 26px;
@@ -135,23 +131,13 @@
       min-height: 1em;
       font-weight: 500;
     }
-
-    @media (max-width:700px) {
-      .container { max-width: 99vw; padding: 0 2vw; }
-      .category-header { font-size: 1.4em; padding: 10px 0; margin-top: 60px; }
-      .plant-grid { gap: 13px 2vw; }
-      .plant-card { width: 41vw; max-width:118px; height: 120px; min-width: 90px; }
-      .plant-img { width: 67px; height: 53px; }
-      .plant-label { font-size: .97em; border-radius: 8px; padding: 6px 2px; }
-      .back-arrow { width: 26px; height: 26px; top: 10px; left: 12px; }
-    }
   </style>
 </head>
 
 <body>
   <div class="bg-overlay"></div>
 
-  <button class="back-arrow" onclick="window.location.href='UserPlantCategories.html'" aria-label="Go Back">
+  <button class="back-arrow" onclick="window.location.href='UserPlantCategories.html'">
     <svg height="22" width="28" viewBox="0 0 30 30">
       <polyline points="20,6 10,15 20,24"
                 fill="none"
@@ -164,68 +150,69 @@
 
   <div class="container">
     <div id="categoryTitle" class="category-header">Category</div>
-    <div id="plantGrid" class="plant-grid">
-      <!-- Placeholder cards (for layout testing) -->
-      <div class="plant-card">
-        <div class="plant-img"><img src="mango.jpg" alt="Mango Tree"></div>
-        <div class="plant-label">Mango Tree</div>
-      </div>
-      <div class="plant-card">
-        <div class="plant-img"><img src="tulsi.jpg" alt="Tulsi"></div>
-        <div class="plant-label">Tulsi</div>
-      </div>
-      <div class="plant-card">
-        <div class="plant-img"><img src="rose.jpg" alt="Rose"></div>
-        <div class="plant-label">Rose</div>
-      </div>
-    </div>
+    <div id="plantGrid" class="plant-grid"></div>
     <div class="status-msg" id="statusMsg"></div>
   </div>
 
   <script>
-    const API_BASE = "http://localhost:5000";
-    const msgEl = document.getElementById("statusMsg");
-    const grid = document.getElementById("plantGrid");
-    const title = document.getElementById("categoryTitle");
-
-    // Get category name from URL
+    const API_BASE = "https://mygardenbook-backend.onrender.com";
     const params = new URLSearchParams(window.location.search);
     const categoryName = params.get("category") || "Category";
-    title.textContent = categoryName;
+
+    document.getElementById("categoryTitle").textContent = categoryName;
+
+    const grid = document.getElementById("plantGrid");
+    const msgEl = document.getElementById("statusMsg");
+
+    function pick(...v) {
+      return v.find(x => x !== undefined && x !== null && x !== "") || null;
+    }
+
+    function resolveImg(src) {
+      if (!src) return null;
+      if (/^https?:\/\//.test(src)) return src;
+      if (src.startsWith("/")) return API_BASE + src;
+      return src;
+    }
+
+    function getId(obj) {
+      return pick(obj.id, obj._id, obj.plantId, obj.plant_id);
+    }
 
     async function loadPlants() {
       try {
         const res = await fetch(`${API_BASE}/api/plants`);
-        if (!res.ok) throw new Error("Failed to load plants");
-        const plants = await res.json();
+        if (!res.ok) throw new Error("Failed");
 
-        // Filter plants for selected category
-        const filtered = plants.filter(p => p.category === categoryName);
-        renderPlants(filtered);
+        const all = await res.json();
+
+        const filtered = all.filter(p =>
+          pick(p.category, p.categoryName, p.category_name) === categoryName
+        );
+
+        if (filtered.length === 0) {
+          msgEl.textContent = "No plants found in this category.";
+          return;
+        }
+
+        grid.innerHTML = filtered.map(p => {
+          const img = resolveImg(
+            pick(p.image, p.image_url, p.imageUrl, p.img, p.photo)
+          );
+
+          return `
+            <div class="plant-card" onclick="location.href='UserEachPlant.html?id=${encodeURIComponent(getId(p))}'">
+              <div class="plant-img">
+                ${img ? `<img src="${img}">` : `<span style='font-size:1.8em;color:#4A771C;'>&#127793;</span>`}
+              </div>
+              <div class="plant-label">${pick(p.name, p.commonName, p.scientific_name) || "Unknown"}</div>
+            </div>
+          `;
+        }).join("");
+
       } catch (err) {
-        console.error(err);
-        showMessage("Error loading plants", "error");
+        msgEl.textContent = "Failed to load plants.";
       }
-    }
-
-    function showMessage(msg, type="info") {
-      msgEl.textContent = msg;
-      msgEl.style.color = type === "error" ? "#b22222" : "#204d1e";
-      setTimeout(() => msgEl.textContent = "", 2000);
-    }
-
-    function renderPlants(plants) {
-      // If no plants in this category, keep placeholders
-      if (!plants || plants.length === 0) return;
-
-      grid.innerHTML = plants.map(p => `
-        <div class="plant-card" onclick="window.location.href='UserEachPlant.html?id=${encodeURIComponent(p.id)}'">
-          <div class="plant-img">
-            ${p.image ? `<img src="${p.image}" alt="${p.commonName}">` : `<span style='font-size:1.8em; color:#4A771C;'>&#127793;</span>`}
-          </div>
-          <div class="plant-label">${p.commonName}</div>
-        </div>
-      `).join("");
     }
 
     loadPlants();
