@@ -27,25 +27,30 @@ export function requireAuth(req, res, next) {
 }
 
 // Register admin (use once, then remove or protect)
-router.post("/register", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: "email & password required" });
+// Go to thunderclient-new request-post- (paste backend url:https://mygardenbook-backend.onrender.com/api/admin/register), add json body: {
+//   "email": "mygardenbook.website@gmail.com",
+//   "password": "xxxxx"
+// }
 
-    // check exists
-    const { data: existing, error: qerr } = await supabase.from("admin_users").select("*").eq("email", email).limit(1);
-    if (qerr) return res.status(500).json({ error: qerr });
-    if (existing && existing.length > 0) return res.status(400).json({ error: "Admin already exists" });
+// router.post("/register", async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+//     if (!email || !password) return res.status(400).json({ error: "email & password required" });
 
-    const hash = await bcrypt.hash(password, SALT_ROUNDS);
-    const { data, error } = await supabase.from("admin_users").insert([{ email, password_hash: hash }]).select();
+//     // check exists
+//     const { data: existing, error: qerr } = await supabase.from("admin_users").select("*").eq("email", email).limit(1);
+//     if (qerr) return res.status(500).json({ error: qerr });
+//     if (existing && existing.length > 0) return res.status(400).json({ error: "Admin already exists" });
 
-    if (error) return res.status(500).json({ error });
-    res.json({ message: "Admin created", admin: { id: data[0].id, email: data[0].email } });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+//     const hash = await bcrypt.hash(password, SALT_ROUNDS);
+//     const { data, error } = await supabase.from("admin_users").insert([{ email, password_hash: hash }]).select();
+
+//     if (error) return res.status(500).json({ error });
+//     res.json({ message: "Admin created", admin: { id: data[0].id, email: data[0].email } });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 
 // Login
 router.post("/login", async (req, res) => {

@@ -1,57 +1,98 @@
-// server/routes/fishes.js
 import express from "express";
-import db from "../db.js";
+import upload from "../helpers/multer.js";
+import cloudinary from "../helpers/cloudinary.js";
+import supabase from "../db.js";
+import fs from "fs";
 
 const router = express.Router();
 
-router.get("/", (req, res) => {
+// GET all fish
+router.get("/", async (req, res) => {
   try {
-    const fishes = db.prepare("SELECT * FROM fishes ORDER BY id DESC").all();
-    res.json(fishes);
+    const { data, error } = await supabase.from("fish").select("*").order("id", { ascending: true });
+    if (error) return res.status(500).json({ error });
+    res.json(data);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to load fishes" });
+    res.status(500).json({ error: err.message });
   }
 });
 
-router.post("/", (req, res) => {
+// GET single fish
+router.get("/:id", async (req, res) => {
   try {
-    const { commonName, scientificName, category, description, image, qr } = req.body;
-    const info = db
-      .prepare(`INSERT INTO fishes (commonName, scientificName, category, description, image, qr)
-                VALUES (?, ?, ?, ?, ?, ?)`)
-      .run(commonName, scientificName, category, description, image, qr);
-    res.json({ message: "Fish added", id: info.lastInsertRowid });
+    const id = req.params.id;
+    const { data, error } = await supabase.from("fish").select("*").eq("id", id).single();
+    if (error) return res.status(404).json({ error });
+    res.json(data);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to add fish" });
+    res.status(500).json({ error: err.message });
   }
 });
 
-router.put("/:id", (req, res) => {
+// Add a fish
+router.post("/add", upload.single("image"), async (req, res) => {
   try {
-    const { id } = req.params;
-    const { commonName, scientificName, category, description, image, qr } = req.body;
-    db.prepare(`
-      UPDATE fishes SET commonName=?, scientificName=?, category=?, description=?, image=?, qr=? WHERE id=?
-    `).run(commonName, scientificName, category, description, image, qr, id);
-    res.json({ message: "Fish updated" });
+    const { name, description, category } = req.body;
+    let image_url = null;
+
+    if (req.file) {
+      const uploadRes = await cloudinary.uploader.upload(req.file.path, {
+        upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET
+      });
+      image_url = uploadRes.secure_url;
+      try { fs.unlinkSync(req.file.path); } catch (e) {}
+    }
+
+    const payload = { name, description, image_url, category };
+    const { data, error } = await supabase.from("fish").insert([payload]).select();
+
+    if (error) return res.status(400).json({ error });
+    res.json({ message: "Fish added", fish: data[0] });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to update fish" });
+    res.status(500).json({ error: err.message });
   }
 });
 
-router.delete("/", (req, res) => {
+// Edit fish
+router.put("/edit/:id", upload.single("image"), async (req, res) => {
   try {
-    const { ids } = req.body;
-    const stmt = db.prepare(`DELETE FROM fishes WHERE id=?`);
-    const transaction = db.transaction(ids.map(id => () => stmt.run(id)));
-    transaction();
-    res.json({ message: "Fishes deleted successfully" });
+    const id = req.params.id;
+    const { name, description, category } = req.body;
+    let image_url;
+
+    if (req.file) {
+      const uploadRes = await cloudinary.uploader.upload(req.file.path, {
+        upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET
+      });
+      image_url = uploadRes.secure_url;
+      try { fs.unlinkSync(req.file.path); } catch (e) {}
+    }
+
+    const updateObj = {};
+    if (name !== undefined) updateObj.name = name;
+    if (description !== undefined) updateObj.description = description;
+    if (category !== undefined) updateObj.category = category;
+    if (image_url) updateObj.image_url = image_url;
+    updateObj.updated_at = new Date().toISOString();
+
+    const { data, error } = await supabase.from("fish").update(updateObj).eq("id", id).select();
+
+    if (error) return res.status(400).json({ error });
+    res.json({ message: "Fish updated", fish: data[0] });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to delete fishes" });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete fish
+router.delete("/delete/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { data, error } = await supabase.from("fish").delete().eq("id", id).select();
+    if (error) return res.status(400).json({ error });
+    res.json({ message: "Fish deleted", fish: data[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
