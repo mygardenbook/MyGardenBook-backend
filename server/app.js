@@ -5,6 +5,8 @@ import dotenv from "dotenv";
 import plantsRoutes from "./routes/plants.js";
 import fishRoutes from "./routes/fish.js";
 import adminRoutes from "./routes/admin.js";
+import authRoutes from "./routes/auth.js";
+
 
 dotenv.config();
 
@@ -21,6 +23,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/plants", plantsRoutes);
 app.use("/api/fish", fishRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/auth", authRoutes);  
+
 
 app.get("/", (req, res) => {
   res.send("MyGardenBook backend is running!");

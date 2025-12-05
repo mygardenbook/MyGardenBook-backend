@@ -1,216 +1,252 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login | MyGardenBook</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login / Signup - My Garden Book</title>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&family=Kalam:wght@700&display=swap" rel="stylesheet">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  <style>
+    * { box-sizing: border-box; margin:0; padding:0; }
     body {
-      min-height: 100vh;
-      font-family: 'Baloo 2','Kalam','Arial',sans-serif;
+      font-family: 'Baloo 2','Kalam',sans-serif;
       background: url('Bg.png') no-repeat center center fixed;
       background-size: cover;
-      position: relative;
-      overflow: hidden;
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      position:relative;
     }
-
-    body::before {
-      content: "";
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(255,255,255,0.7);
-      z-index: 0;
+    body::before{
+      content:""; position:fixed; top:0; left:0; width:100%; height:100%;
+      background:rgba(255,255,255,0.7); z-index:0;
     }
-
-    .container {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      text-align: center;
+    .card {
+      z-index:2; width:92%; max-width:420px; background:rgba(143,216,113,0.45);
+      padding:1.6rem 1.8rem; border-radius:18px; box-shadow:0 8px 30px rgba(0,0,0,0.12);
     }
-
-    .title {
-      font-size: 2.4rem;
-      font-family: 'Kalam', cursive;
-      color: #4A771C;
-      text-shadow: 1px 1px 0 #fff, 2px 2px 8px #a0b38a57;
-      font-weight: bold;
-      margin-bottom: 1.8rem;
+    .title { text-align:center; font-size:1.6rem; font-weight:700; margin-bottom:12px; color:#204d1e; }
+    .tabs { display:flex; gap:8px; margin-bottom:12px; }
+    .tab {
+      cursor:pointer; flex:1; padding:8px 10px; border-radius:12px;
+      text-align:center; font-weight:600; background:#d7efce; transition:0.18s;
     }
-
-    .login-box {
-      background: rgba(143, 216, 113, 0.5);
-      border-radius: 20px;
-      box-shadow: 0 4px 20px 2px #B7DAB8;
-      padding: 2.2rem 2.5rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 1.2rem;
-      min-width: 300px;
-    }
-
-    .input-group { position: relative; width: 100%; }
-
-    input {
-      width: 100%;
-      border: none;
-      border-radius: 20px;
-      padding: 0.8rem 2.8rem 0.8rem 1rem;
-      font-size: 1.1rem;
-      background: rgba(255,255,255,0.9);
-      color: #262A23;
-      font-family: 'Baloo 2', sans-serif;
-      outline: none;
-    }
-
-    input::placeholder { color: #4A771Caa; }
-
-    .eye-icon {
-      position: absolute;
-      top: 50%; right: 1rem;
-      transform: translateY(-50%);
-      cursor: pointer;
-      width: 22px; height: 22px;
-      stroke: #4A771C;
-      opacity: 0.8;
-      transition: opacity 0.2s;
-    }
-
-    .eye-icon:hover { opacity: 1; }
-
-    .login-btn {
-      background: #BFE7BC;
-      color: #262A23;
-      border: none;
-      border-radius: 20px;
-      padding: 0.9rem 2.2rem;
-      font-size: 1.25rem;
-      cursor: pointer;
-      font-weight: bold;
-      transition: all 0.2s ease;
-      min-width: 150px;
-    }
-
-    .login-btn:hover { background: #b3e572; color: #fff; transform: translateY(-2px); }
-
-    .error-msg {
-      color: #b22222;
-      font-size: 0.95rem;
-      font-weight: bold;
-      min-height: 1.2rem;
-      margin-top: 0.5rem;
-      transition: opacity 0.3s ease;
-    }
-
-    @media (max-width: 600px) {
-      .login-box { padding: 1.8rem 1.8rem; width: 85%; }
-      .title { font-size: 2rem; }
-    }
+    .tab.active { background:#BFE7BC; color:#1A2B10; box-shadow:0 3px 10px rgba(0,0,0,0.12); }
+    .forms { width:200%; display:flex; transition:transform 0.28s ease; }
+    form { width:50%; display:flex; flex-direction:column; gap:10px; }
+    input { border-radius:10px; border:2px solid #66A03A; padding:10px 12px; font-size:1rem; background:white; outline:none; }
+    .btn { background:#BFE7BC; border:none; padding:10px; border-radius:12px; font-size:1.05rem; cursor:pointer; font-weight:600; }
+    .btn:hover { background:#b3e572; }
+    .helper { font-size:0.95rem; color:#2e7d32; text-align:center; margin-top:8px; min-height:1.1rem; }
+    .small { font-size:0.9rem; color:#27421b; text-align:center; margin-top:8px; }
+    .sep { height:10px; }
+    .admin-note { font-size:0.9rem; color:#333; text-align:center; margin-top:10px; }
   </style>
 </head>
 
 <body>
-  <div class="container">
-    <div class="title">Login</div>
-    <div class="login-box">
-      <div class="input-group">
-        <input type="text" id="username" placeholder="Username" autocomplete="off" />
-      </div>
+  <div class="card" role="main" aria-labelledby="cardTitle">
+    <div id="cardTitle" class="title">My Garden Book</div>
 
-      <div class="input-group">
-        <input type="password" id="password" placeholder="Password" autocomplete="off" />
-        <svg id="togglePassword" class="eye-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-          <circle cx="12" cy="12" r="3"></circle>
-        </svg>
-      </div>
+    <div class="tabs" role="tablist" aria-label="Auth tabs">
+      <div id="userTab" class="tab active" role="tab" aria-selected="true">User Login / Signup</div>
+      <div id="adminTab" class="tab" role="tab" aria-selected="false">Admin Login</div>
+    </div>
 
-      <button id="loginBtn" class="login-btn">Login</button>
-      <div id="errorMsg" class="error-msg"></div>
+    <div style="overflow:hidden;">
+      <div class="forms" id="formSlider">
+
+        <!-- USER SIDE -->
+        <div style="padding-right:12px;">
+          <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <button id="uLoginBtn" class="tab active" style="flex:1;">Login</button>
+            <button id="uSignupBtn" class="tab" style="flex:1;">Sign up</button>
+          </div>
+
+          <form id="userLoginForm">
+            <input id="userLoginEmail" type="email" placeholder="Email" required />
+            <input id="userLoginPass" type="password" placeholder="Password" required />
+            <button class="btn" type="submit">Login</button>
+            <div id="userLoginMsg" class="helper"></div>
+          </form>
+
+          <form id="userSignupForm" style="display:none;">
+            <input id="userSignupEmail" type="email" placeholder="Email" required />
+            <input id="userSignupPass" type="password" placeholder="Create password" required />
+            <input id="userSignupConfirm" type="password" placeholder="Confirm password" required />
+            <button class="btn" type="submit">Create account</button>
+            <div id="userSignupMsg" class="helper"></div>
+          </form>
+
+          <div class="small">Users authenticated via <strong>Supabase Auth.</strong></div>
+        </div>
+
+        <!-- ADMIN -->
+        <div style="padding-left:12px;">
+          <form id="adminLoginForm">
+            <input id="adminEmail" type="email" placeholder="Admin email" required />
+            <input id="adminPass" type="password" placeholder="Admin password" required />
+            <button class="btn" type="submit">Admin Login</button>
+            <div id="adminMsg" class="helper"></div>
+          </form>
+
+          <div class="admin-note">Admin accounts are stored in backend (admin_users table).</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="small" style="margin-top:12px; text-align:center; color:#444;">
+      Email verification required for new accounts.
     </div>
   </div>
 
+  <!-- SUPABASE CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.js"></script>
+
   <script>
-    // Auto-detect API (works for localhost + Render)
-    const API_BASE = "https://mygardenbook-backend.onrender.com";
+    const SUPABASE_URL = "https://ctoqycjzmfvdvgnirlkp.supabase.co";
+    const SUPABASE_ANON_KEY = "YOUR_ANON_KEY";
+    const BACKEND_BASE = "https://mygardenbook-backend.onrender.com";
 
-    const usernameEl = document.getElementById("username");
-    const passwordEl = document.getElementById("password");
-    const togglePassword = document.getElementById("togglePassword");
-    const loginBtn = document.getElementById("loginBtn");
-    const errorMsg = document.getElementById("errorMsg");
+    const supabase = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // 👁 Toggle password visibility
-    togglePassword.addEventListener("click", () => {
-      const isHidden = passwordEl.type === "password";
-      passwordEl.type = isHidden ? "text" : "password";
-      togglePassword.innerHTML = isHidden
-        ? '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a20.07 20.07 0 0 1 5.06-5.94M1 1l22 22"/>'
-        : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
-    });
+    const userTab = document.getElementById("userTab");
+    const adminTab = document.getElementById("adminTab");
+    const formSlider = document.getElementById("formSlider");
 
-    // 🚀 Handle login
-    loginBtn.addEventListener("click", async () => {
-      const username = usernameEl.value.trim();
-      const password = passwordEl.value.trim();
+    userTab.onclick = () => {
+      userTab.classList.add("active");
+      adminTab.classList.remove("active");
+      formSlider.style.transform = "translateX(0%)";
+    };
 
-      if (!username || !password) {
-        errorMsg.textContent = "Please enter username and password.";
+    adminTab.onclick = () => {
+      adminTab.classList.add("active");
+      userTab.classList.remove("active");
+      formSlider.style.transform = "translateX(-50%)";
+    };
+
+    // User login/signup toggle
+    const uLoginBtn = document.getElementById("uLoginBtn");
+    const uSignupBtn = document.getElementById("uSignupBtn");
+    const userLoginForm = document.getElementById("userLoginForm");
+    const userSignupForm = document.getElementById("userSignupForm");
+    const userLoginMsg = document.getElementById("userLoginMsg");
+    const userSignupMsg = document.getElementById("userSignupMsg");
+
+    uLoginBtn.onclick = () => {
+      uLoginBtn.classList.add("active");
+      uSignupBtn.classList.remove("active");
+      userLoginForm.style.display = "flex";
+      userSignupForm.style.display = "none";
+      userLoginMsg.textContent = "";
+      userSignupMsg.textContent = "";
+    };
+
+    uSignupBtn.onclick = () => {
+      uSignupBtn.classList.add("active");
+      uLoginBtn.classList.remove("active");
+      userLoginForm.style.display = "none";
+      userSignupForm.style.display = "flex";
+      userLoginMsg.textContent = "";
+      userSignupMsg.textContent = "";
+    };
+
+    /******** USER LOGIN ********/
+    userLoginForm.onsubmit = async (e) => {
+      e.preventDefault();
+      userLoginMsg.style.color = "#1A2B10";
+      userLoginMsg.textContent = "Signing in...";
+
+      const email = userLoginEmail.value.trim();
+      const password = userLoginPass.value.trim();
+
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        userLoginMsg.style.color = "#c62828";
+        userLoginMsg.textContent = error.message;
         return;
       }
 
-      errorMsg.style.color = "#b22222";
-      errorMsg.textContent = "Checking credentials...";
+      localStorage.setItem("mg_user_id", data.user.id);
 
-      try {
-        const res = await fetch(`${API_BASE}/api/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password }),
-        });
+      userLoginMsg.style.color = "#2e7d32";
+      userLoginMsg.textContent = "Success — redirecting...";
 
-        const data = await res.json();
+      setTimeout(() => window.location.href = "User.html", 700);
+    };
 
-        if (res.ok && data.success) {
-          localStorage.setItem("username", username);
-          localStorage.setItem("role", data.role);
+    /******** USER SIGNUP ********/
+    userSignupForm.onsubmit = async (e) => {
+      e.preventDefault();
 
-          errorMsg.style.color = "#2e7d32";
-          errorMsg.textContent = "✔ Login successful! Redirecting...";
+      const email = userSignupEmail.value.trim();
+      const pass = userSignupPass.value.trim();
+      const confirm = userSignupConfirm.value.trim();
 
-          setTimeout(() => {
-            if (data.role === "admin") {
-              window.location.href = "Admin.html";
-            } else {
-              window.location.href = "User.html";
-            }
-          }, 900);
-
-        } else {
-          errorMsg.style.color = "#b22222";
-          errorMsg.textContent = "❌ Invalid username or password.";
-        }
-      } catch (err) {
-        console.error("Login error:", err);
-        errorMsg.style.color = "#b22222";
-        errorMsg.textContent = "❌ Server unreachable. Try again.";
+      if (pass !== confirm) {
+        userSignupMsg.style.color = "#c62828";
+        userSignupMsg.textContent = "Passwords do not match";
+        return;
       }
-    });
 
-    // Hit Enter to login
-    document.addEventListener("keydown", e => {
-      if (e.key === "Enter") loginBtn.click();
-    });
+      userSignupMsg.style.color = "#1A2B10";
+      userSignupMsg.textContent = "Creating account...";
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: pass,
+        options: {
+          emailRedirectTo: window.location.origin + "/login.html"
+        }
+      });
+
+      if (error) {
+        userSignupMsg.style.color = "#c62828";
+        userSignupMsg.textContent = error.message;
+        return;
+      }
+
+      userSignupMsg.style.color = "#2e7d32";
+      userSignupMsg.textContent = "Account created. Please verify your email.";
+
+      uLoginBtn.click();
+    };
+
+    /******** ADMIN LOGIN ********/
+    adminLoginForm.onsubmit = async (e) => {
+      e.preventDefault();
+      adminMsg.style.color = "#1A2B10";
+      adminMsg.textContent = "Logging in...";
+
+      const email = adminEmail.value.trim();
+      const password = adminPass.value.trim();
+
+      const res = await fetch(`${BACKEND_BASE}/api/admin/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        adminMsg.style.color = "#c62828";
+        adminMsg.textContent = json.error || "Login failed";
+        return;
+      }
+
+      localStorage.setItem("admin_token", json.token);
+      localStorage.setItem("admin_email", json.admin.email);
+
+      adminMsg.style.color = "#2e7d32";
+      adminMsg.textContent = "Success — redirecting...";
+
+      setTimeout(() => window.location.href = "Admin.html", 600);
+    };
   </script>
 </body>
 </html>
