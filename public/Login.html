@@ -44,7 +44,6 @@
     .admin-note { font-size:0.9rem; color:#333; text-align:center; margin-top:10px; }
   </style>
 </head>
-
 <body>
   <div class="card" role="main" aria-labelledby="cardTitle">
     <div id="cardTitle" class="title">My Garden Book</div>
@@ -57,61 +56,74 @@
     <div style="overflow:hidden;">
       <div class="forms" id="formSlider">
 
-        <!-- USER SIDE -->
+        <!-- USER UI (left half) -->
         <div style="padding-right:12px;">
+          <!-- Toggle: Login vs Signup inside user tab -->
           <div style="display:flex; gap:8px; margin-bottom:10px;">
             <button id="uLoginBtn" class="tab active" style="flex:1;">Login</button>
             <button id="uSignupBtn" class="tab" style="flex:1;">Sign up</button>
           </div>
 
-          <form id="userLoginForm">
+          <!-- USER LOGIN FORM -->
+          <form id="userLoginForm" aria-label="User login form">
             <input id="userLoginEmail" type="email" placeholder="Email" required />
             <input id="userLoginPass" type="password" placeholder="Password" required />
             <button class="btn" type="submit">Login</button>
-            <div id="userLoginMsg" class="helper"></div>
+            <div id="userLoginMsg" class="helper" role="status" aria-live="polite"></div>
           </form>
 
-          <form id="userSignupForm" style="display:none;">
+          <!-- USER SIGNUP FORM -->
+          <form id="userSignupForm" style="display:none;" aria-label="User signup form">
             <input id="userSignupEmail" type="email" placeholder="Email" required />
             <input id="userSignupPass" type="password" placeholder="Create password" required />
             <input id="userSignupConfirm" type="password" placeholder="Confirm password" required />
             <button class="btn" type="submit">Create account</button>
-            <div id="userSignupMsg" class="helper"></div>
+            <div id="userSignupMsg" class="helper" role="status" aria-live="polite"></div>
           </form>
 
-          <div class="small">Users authenticated via <strong>Supabase Auth.</strong></div>
+          <div class="sep"></div>
+          <div class="small">Users authenticated via <strong>Supabase Auth (email/password)</strong>.</div>
         </div>
 
-        <!-- ADMIN -->
+        <!-- ADMIN UI (right half) -->
         <div style="padding-left:12px;">
-          <form id="adminLoginForm">
+          <form id="adminLoginForm" aria-label="Admin login form">
             <input id="adminEmail" type="email" placeholder="Admin email" required />
             <input id="adminPass" type="password" placeholder="Admin password" required />
             <button class="btn" type="submit">Admin Login</button>
-            <div id="adminMsg" class="helper"></div>
+            <div id="adminMsg" class="helper" role="status" aria-live="polite"></div>
           </form>
 
-          <div class="admin-note">Admin accounts are stored in backend (admin_users table).</div>
+          <div class="sep"></div>
+          <div class="admin-note">Admin accounts are handled by your backend (keeps admin_table & hashes).</div>
         </div>
 
       </div>
     </div>
 
     <div class="small" style="margin-top:12px; text-align:center; color:#444;">
-      Email verification required for new accounts.
+      Need account verification or password reset? Use Supabase Dashboard (Auth → Settings).
     </div>
   </div>
 
-  <!-- SUPABASE CDN -->
+  <!-- Supabase JS (CDN) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.js"></script>
 
   <script>
+    /***********************
+     *  CONFIG - replace these
+     *  or inject via environment during deployment
+     ***********************/
     const SUPABASE_URL = "https://ctoqycjzmfvdvgnirlkp.supabase.co";
-    const SUPABASE_ANON_KEY = "YOUR_ANON_KEY";
-    const BACKEND_BASE = "https://mygardenbook-backend.onrender.com";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0b3F5Y2p6bWZ2ZHZnbmlybGtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzNDUyOTIsImV4cCI6MjA3OTkyMTI5Mn0.Gd3gHxbypxTKpyweLFwQvriIeX2lF1QTTRSMDfpXbqI";
+    const BACKEND_BASE = "https://mygardenbook-backend.onrender.com"; // adjust if needed
 
+    // initialize supabase client
     const supabase = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    /***********************
+     * UI wiring
+     ***********************/
     const userTab = document.getElementById("userTab");
     const adminTab = document.getElementById("adminTab");
     const formSlider = document.getElementById("formSlider");
@@ -119,16 +131,21 @@
     userTab.onclick = () => {
       userTab.classList.add("active");
       adminTab.classList.remove("active");
+      // show left half
       formSlider.style.transform = "translateX(0%)";
+      userTab.setAttribute("aria-selected","true");
+      adminTab.setAttribute("aria-selected","false");
     };
-
     adminTab.onclick = () => {
       adminTab.classList.add("active");
       userTab.classList.remove("active");
+      // slide to right half
       formSlider.style.transform = "translateX(-50%)";
+      userTab.setAttribute("aria-selected","false");
+      adminTab.setAttribute("aria-selected","true");
     };
 
-    // User login/signup toggle
+    // inside user: toggle Login vs Signup panels
     const uLoginBtn = document.getElementById("uLoginBtn");
     const uSignupBtn = document.getElementById("uSignupBtn");
     const userLoginForm = document.getElementById("userLoginForm");
@@ -137,116 +154,136 @@
     const userSignupMsg = document.getElementById("userSignupMsg");
 
     uLoginBtn.onclick = () => {
-      uLoginBtn.classList.add("active");
-      uSignupBtn.classList.remove("active");
-      userLoginForm.style.display = "flex";
-      userSignupForm.style.display = "none";
+      uLoginBtn.classList.add("active"); uSignupBtn.classList.remove("active");
+      userLoginForm.style.display = "flex"; userSignupForm.style.display = "none";
       userLoginMsg.textContent = "";
       userSignupMsg.textContent = "";
     };
-
     uSignupBtn.onclick = () => {
-      uSignupBtn.classList.add("active");
-      uLoginBtn.classList.remove("active");
-      userLoginForm.style.display = "none";
-      userSignupForm.style.display = "flex";
+      uSignupBtn.classList.add("active"); uLoginBtn.classList.remove("active");
+      userLoginForm.style.display = "none"; userSignupForm.style.display = "flex";
       userLoginMsg.textContent = "";
       userSignupMsg.textContent = "";
     };
 
-    /******** USER LOGIN ********/
-    userLoginForm.onsubmit = async (e) => {
+    /***********************
+     * USER: login via Supabase
+     ***********************/
+    document.getElementById("userLoginForm").onsubmit = async (e) => {
       e.preventDefault();
-      userLoginMsg.style.color = "#1A2B10";
-      userLoginMsg.textContent = "Signing in...";
+      userLoginMsg.style.color = "#1A2B10"; userLoginMsg.textContent = "Signing in...";
+      const email = document.getElementById("userLoginEmail").value.trim();
+      const password = document.getElementById("userLoginPass").value.trim();
 
-      const email = userLoginEmail.value.trim();
-      const password = userLoginPass.value.trim();
-
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-      if (error) {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          userLoginMsg.style.color = "#c62828";
+          userLoginMsg.textContent = error.message || "Login failed";
+          return;
+        }
+        // success: store session (we store user.id and token minimally)
+        // supabase stores session internally but we save useful bits for front-end routing
+        localStorage.setItem("mg_user_id", data.user?.id || "");
+        // redirect user to user menu / dashboard
+        userLoginMsg.style.color = "#2e7d32";
+        userLoginMsg.textContent = "Login successful — redirecting...";
+        setTimeout(() => window.location.href = "User.html", 700);
+      } catch (err) {
+        console.error(err);
         userLoginMsg.style.color = "#c62828";
-        userLoginMsg.textContent = error.message;
-        return;
+        userLoginMsg.textContent = "Server error";
       }
-
-      localStorage.setItem("mg_user_id", data.user.id);
-
-      userLoginMsg.style.color = "#2e7d32";
-      userLoginMsg.textContent = "Success — redirecting...";
-
-      setTimeout(() => window.location.href = "User.html", 700);
     };
 
-    /******** USER SIGNUP ********/
-    userSignupForm.onsubmit = async (e) => {
+    /***********************
+     * USER: signup via Supabase
+     ***********************/
+    document.getElementById("userSignupForm").onsubmit = async (e) => {
       e.preventDefault();
-
-      const email = userSignupEmail.value.trim();
-      const pass = userSignupPass.value.trim();
-      const confirm = userSignupConfirm.value.trim();
+      userSignupMsg.style.color = "#1A2B10"; userSignupMsg.textContent = "Creating account...";
+      const email = document.getElementById("userSignupEmail").value.trim();
+      const pass = document.getElementById("userSignupPass").value.trim();
+      const confirm = document.getElementById("userSignupConfirm").value.trim();
 
       if (pass !== confirm) {
         userSignupMsg.style.color = "#c62828";
         userSignupMsg.textContent = "Passwords do not match";
         return;
       }
-
-      userSignupMsg.style.color = "#1A2B10";
-      userSignupMsg.textContent = "Creating account...";
-
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password: pass,
-        options: {
-          emailRedirectTo: window.location.origin + "/login.html"
+      try {
+        const { data, error } = await supabase.auth.signUp({ email, password: pass }, { data: { source: "web" } });
+        if (error) {
+          userSignupMsg.style.color = "#c62828";
+          userSignupMsg.textContent = error.message || "Signup failed";
+          return;
         }
-      });
-
-      if (error) {
+        userSignupMsg.style.color = "#2e7d32";
+        userSignupMsg.textContent = "Account created. Check your email for confirmation (if enabled). Please log in.";
+        // automatically switch to login view
+        uLoginBtn.click();
+      } catch (err) {
+        console.error(err);
         userSignupMsg.style.color = "#c62828";
-        userSignupMsg.textContent = error.message;
-        return;
+        userSignupMsg.textContent = "Server error";
       }
-
-      userSignupMsg.style.color = "#2e7d32";
-      userSignupMsg.textContent = "Account created. Please verify your email.";
-
-      uLoginBtn.click();
     };
 
-    /******** ADMIN LOGIN ********/
-    adminLoginForm.onsubmit = async (e) => {
+    /***********************
+     * ADMIN: login uses your backend /api/admin/login
+     ***********************/
+    document.getElementById("adminLoginForm").onsubmit = async (e) => {
       e.preventDefault();
-      adminMsg.style.color = "#1A2B10";
-      adminMsg.textContent = "Logging in...";
+      const msgEl = document.getElementById("adminMsg");
+      msgEl.style.color = "#1A2B10"; msgEl.textContent = "Logging in...";
+      const email = document.getElementById("adminEmail").value.trim();
+      const password = document.getElementById("adminPass").value.trim();
 
-      const email = adminEmail.value.trim();
-      const password = adminPass.value.trim();
-
-      const res = await fetch(`${BACKEND_BASE}/api/admin/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-      });
-
-      const json = await res.json();
-
-      if (!res.ok) {
-        adminMsg.style.color = "#c62828";
-        adminMsg.textContent = json.error || "Login failed";
-        return;
+      try {
+        const res = await fetch(`${BACKEND_BASE}/api/admin/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          msgEl.style.color = "#c62828";
+          msgEl.textContent = json.error || "Admin login failed";
+          return;
+        }
+        // backend returns token + admin info (per your admin.js)
+        localStorage.setItem("admin_token", json.token);
+        localStorage.setItem("admin_email", json.admin?.email || email);
+        msgEl.style.color = "#2e7d32";
+        msgEl.textContent = "Admin login successful — redirecting...";
+        setTimeout(() => window.location.href = "Admin.html", 600);
+      } catch (err) {
+        console.error(err);
+        msgEl.style.color = "#c62828";
+        msgEl.textContent = "Server error";
       }
-
-      localStorage.setItem("admin_token", json.token);
-      localStorage.setItem("admin_email", json.admin.email);
-
-      adminMsg.style.color = "#2e7d32";
-      adminMsg.textContent = "Success — redirecting...";
-
-      setTimeout(() => window.location.href = "Admin.html", 600);
     };
+
+    /***********************
+     * Optional: check if user already logged in (persisted session)
+     ***********************/
+    (async function checkSession() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          // user already signed in
+          // redirect to user view
+          // NOTE: you might want to refresh tokens or fetch profile before redirecting
+          console.log("Supabase session found — redirecting to User.html");
+          // small delay so user sees message if they opened the login page intentionally
+          setTimeout(() => window.location.href = "User.html", 700);
+        }
+      } catch (err) {
+        // ignore
+      }
+    })();
+
   </script>
+  <script src="/js/config.js"></script>
 </body>
 </html>
