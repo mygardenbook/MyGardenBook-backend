@@ -3,7 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 
 import plantsRoutes from "./routes/plants.js";
-import fishRoutes from "./routes/fish.js";
+import fishRoutes from "./routes/fishes.js";
 import adminRoutes from "./routes/admin.js";
 
 dotenv.config();
