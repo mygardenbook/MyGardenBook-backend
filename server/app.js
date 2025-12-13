@@ -91,6 +91,13 @@ app.post("/api/ask-ai", async (req, res) => {
 });
 
 /* -------------------------------------------
+   DOWNLOADING DATA
+--------------------------------------------- */
+import exportRoutes from "./routes/export.js";
+app.use("/api/export", exportRoutes);
+
+
+/* -------------------------------------------
    ROUTES
 --------------------------------------------- */
 
@@ -109,3 +116,5 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+
