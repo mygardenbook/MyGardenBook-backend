@@ -1,14 +1,20 @@
+// server/db.js
 import { createClient } from "@supabase/supabase-js";
-import dotenv from "dotenv";
-dotenv.config();
 
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
-  console.warn("SUPABASE_URL or SUPABASE_KEY not set in env");
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  console.error("❌ SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set in env");
+  process.exit(1);
 }
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
+export const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY,
+  {
+    auth: {
+      persistSession: false
+    }
+  }
 );
-
-export default supabase;
