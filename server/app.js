@@ -5,7 +5,8 @@ import dotenv from "dotenv";
 import plantsRoutes from "./routes/plants.js";
 import fishRoutes from "./routes/fishes.js";
 import adminRoutes from "./routes/admin.js";
-import categoriesRoutes from "./routes/categories.js";   // ✅ FIXED
+import categoriesRoutes from "./routes/categories.js";
+app.use("/api/categories", categoriesRoutes);
 
 import fetch from "node-fetch"; // ✅ required for AI route
 
