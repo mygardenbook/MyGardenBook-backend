@@ -1,80 +1,97 @@
 import express from "express";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import upload from "../helpers/multer.js";
+import cloudinary from "../helpers/cloudinary.js";
 import supabase from "../db.js";
+import fs from "fs";
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET_KEY || "change_this_secret_in_prod";
-const SALT_ROUNDS = 10;
 
-// Helper: create token
-function createToken(payload) {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
-}
-
-// Middleware to protect routes
-export function requireAuth(req, res, next) {
-  const authHeader = req.headers.authorization || "";
-  const token = authHeader.replace("Bearer ", "");
-  if (!token) return res.status(401).json({ error: "No token provided" });
+// GET all plants
+router.get("/", async (req, res) => {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.admin = decoded;
-    return next();
-  } catch (err) {
-    return res.status(401).json({ error: "Invalid token" });
-  }
-}
-
-// Register admin (use once, then remove or protect)
-router.post("/register", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: "email & password required" });
-
-    // check exists
-    const { data: existing, error: qerr } = await supabase.from("admin_users").select("*").eq("email", email).limit(1);
-    if (qerr) return res.status(500).json({ error: qerr });
-    if (existing && existing.length > 0) return res.status(400).json({ error: "Admin already exists" });
-
-    const hash = await bcrypt.hash(password, SALT_ROUNDS);
-    const { data, error } = await supabase.from("admin_users").insert([{ email, password_hash: hash }]).select();
-
+    const { data, error } = await supabase.from("plants").select("*").order("id", { ascending: true });
     if (error) return res.status(500).json({ error });
-    res.json({ message: "Admin created", admin: { id: data[0].id, email: data[0].email } });
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Login
-router.post("/login", async (req, res) => {
+// GET single plant
+router.get("/:id", async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: "email & password required" });
-
-    const { data, error } = await supabase.from("admin_users").select("*").eq("email", email).limit(1);
-    if (error) return res.status(500).json({ error });
-    if (!data || data.length === 0) return res.status(400).json({ error: "Invalid credentials" });
-
-    const admin = data[0];
-    const ok = await bcrypt.compare(password, admin.password_hash);
-    if (!ok) return res.status(400).json({ error: "Invalid credentials" });
-
-    const token = createToken({ id: admin.id, email: admin.email });
-    res.json({ message: "Logged in", token, admin: { id: admin.id, email: admin.email } });
+    const id = req.params.id;
+    const { data, error } = await supabase.from("plants").select("*").eq("id", id).single();
+    if (error) return res.status(404).json({ error });
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Example protected route to get all admin users (only accessible with token)
-router.get("/me", requireAuth, async (req, res) => {
+// Add a plant
+router.post("/add", upload.single("image"), async (req, res) => {
   try {
-    const adminId = req.admin.id;
-    const { data, error } = await supabase.from("admin_users").select("id,email,created_at").eq("id", adminId).single();
-    if (error) return res.status(500).json({ error });
-    res.json({ admin: data });
+    const { name, description, category } = req.body;
+    let image_url = null;
+
+    if (req.file) {
+      const uploadRes = await cloudinary.uploader.upload(req.file.path, {
+        upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET
+      });
+      image_url = uploadRes.secure_url;
+      // cleanup tmp file
+      try { fs.unlinkSync(req.file.path); } catch (e) {}
+    }
+
+    const payload = { name, description, image_url, category };
+    const { data, error } = await supabase.from("plants").insert([payload]).select();
+
+    if (error) return res.status(400).json({ error });
+    res.json({ message: "Plant added", plant: data[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Edit plant
+router.put("/edit/:id", upload.single("image"), async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { name, description, category } = req.body;
+    let image_url;
+
+    if (req.file) {
+      const uploadRes = await cloudinary.uploader.upload(req.file.path, {
+        upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET
+      });
+      image_url = uploadRes.secure_url;
+      try { fs.unlinkSync(req.file.path); } catch (e) {}
+    }
+
+    const updateObj = {};
+    if (name !== undefined) updateObj.name = name;
+    if (description !== undefined) updateObj.description = description;
+    if (category !== undefined) updateObj.category = category;
+    if (image_url) updateObj.image_url = image_url;
+    updateObj.updated_at = new Date().toISOString();
+
+    const { data, error } = await supabase.from("plants").update(updateObj).eq("id", id).select();
+
+    if (error) return res.status(400).json({ error });
+    res.json({ message: "Plant updated", plant: data[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete plant
+router.delete("/delete/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { data, error } = await supabase.from("plants").delete().eq("id", id).select();
+    if (error) return res.status(400).json({ error });
+    res.json({ message: "Plant deleted", plant: data[0] });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
