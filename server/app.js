@@ -18,7 +18,7 @@ const app = express();
    FIXED CORS CONFIGURATION FOR RENDER + VERCEL
 --------------------------------------------- */
 
-const PROD_FRONTEND = "https://my-garden-book-frontend.vercel.app";
+const PROD_FRONTEND = process.env.FRONTEND_URL;
 
 const VERCEL_PREVIEW_REGEX =
   /^https:\/\/my-garden-book-frontend-.*\.vercel\.app$/;
