@@ -2,11 +2,13 @@ import express from "express";
 import upload from "../helpers/multer.js";
 import cloudinary from "../helpers/cloudinary.js";
 import supabase from "../db.js";
+import requireAdmin from "../middleware/requireAdmin.js";
 import fs from "fs";
+import QRCode from "qrcode";
 
 const router = express.Router();
 
-/* ------------------ GET ALL PLANTS ------------------ */
+/* ------------------ GET ALL PLANTS (PUBLIC) ------------------ */
 router.get("/", async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -21,7 +23,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-/* ------------------ GET SINGLE PLANT ------------------ */
+/* ------------------ GET SINGLE PLANT (PUBLIC) ------------------ */
 router.get("/:id", async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -37,25 +39,23 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-/* ------------------ ADD PLANT ------------------ */
-router.post("/", upload.single("image"), async (req, res) => {
+/* ------------------ ADD PLANT (ADMIN) ------------------ */
+router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
   try {
     const { name, description, category } = req.body;
-    if (!name) {
-      return res.status(400).json({ error: "Plant name required" });
-    }
+    if (!name) return res.status(400).json({ error: "Plant name required" });
 
     let image_url = null;
 
     if (req.file) {
-      const uploadRes = await cloudinary.uploader.upload(req.file.path, {
+      const img = await cloudinary.uploader.upload(req.file.path, {
         upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET
       });
-      image_url = uploadRes.secure_url;
+      image_url = img.secure_url;
       fs.unlinkSync(req.file.path);
     }
 
-    const { data, error } = await supabase
+    const { data: plant, error } = await supabase
       .from("plants")
       .insert([{ name, description, category, image_url }])
       .select()
@@ -63,27 +63,29 @@ router.post("/", upload.single("image"), async (req, res) => {
 
     if (error) throw error;
 
-    res.json({ success: true, plant: data });
-  } catch {
+    const qr_code_url = await QRCode.toDataURL(
+      `${process.env.FRONTEND_URL}/PlantView.html?id=${plant.id}`
+    );
+
+    await supabase.from("plants").update({ qr_code_url }).eq("id", plant.id);
+
+    res.json({ success: true, plant: { ...plant, qr_code_url } });
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Failed to add plant" });
   }
 });
 
-/* ------------------ UPDATE PLANT ------------------ */
-router.put("/:id", upload.single("image"), async (req, res) => {
+/* ------------------ UPDATE PLANT (ADMIN) ------------------ */
+router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
   try {
-    const update = {};
-    const { name, description, category } = req.body;
-
-    if (name) update.name = name;
-    if (description) update.description = description;
-    if (category) update.category = category;
+    const update = { ...req.body };
 
     if (req.file) {
-      const uploadRes = await cloudinary.uploader.upload(req.file.path, {
+      const img = await cloudinary.uploader.upload(req.file.path, {
         upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET
       });
-      update.image_url = uploadRes.secure_url;
+      update.image_url = img.secure_url;
       fs.unlinkSync(req.file.path);
     }
 
@@ -95,25 +97,9 @@ router.put("/:id", upload.single("image"), async (req, res) => {
       .single();
 
     if (error) throw error;
-
     res.json({ success: true, plant: data });
   } catch {
     res.status(500).json({ error: "Failed to update plant" });
-  }
-});
-
-/* ------------------ DELETE PLANT ------------------ */
-router.delete("/:id", async (req, res) => {
-  try {
-    const { error } = await supabase
-      .from("plants")
-      .delete()
-      .eq("id", req.params.id);
-
-    if (error) throw error;
-    res.json({ success: true });
-  } catch {
-    res.status(500).json({ error: "Failed to delete plant" });
   }
 });
 

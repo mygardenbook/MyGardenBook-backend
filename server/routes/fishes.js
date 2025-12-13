@@ -2,12 +2,13 @@ import express from "express";
 import upload from "../helpers/multer.js";
 import cloudinary from "../helpers/cloudinary.js";
 import supabase from "../db.js";
+import requireAdmin from "../middleware/requireAdmin.js";
 import fs from "fs";
 import QRCode from "qrcode";
 
 const router = express.Router();
 
-/* ---------------- GET ALL FISHES ---------------- */
+/* ---------------- GET ALL FISHES (PUBLIC) ---------------- */
 router.get("/", async (req, res) => {
   const { data, error } = await supabase
     .from("fishes")
@@ -18,7 +19,7 @@ router.get("/", async (req, res) => {
   res.json(data);
 });
 
-/* ---------------- GET SINGLE FISH ---------------- */
+/* ---------------- GET SINGLE FISH (PUBLIC) ---------------- */
 router.get("/:id", async (req, res) => {
   const { data, error } = await supabase
     .from("fishes")
@@ -30,8 +31,8 @@ router.get("/:id", async (req, res) => {
   res.json(data);
 });
 
-/* ---------------- ADD FISH ---------------- */
-router.post("/", upload.single("image"), async (req, res) => {
+/* ---------------- ADD FISH (ADMIN) ---------------- */
+router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
   try {
     const { name, scientific_name, category, description } = req.body;
     if (!name) return res.status(400).json({ success: false });
@@ -58,21 +59,17 @@ router.post("/", upload.single("image"), async (req, res) => {
       `${process.env.FRONTEND_URL}/FishView.html?id=${fish.id}`
     );
 
-    await supabase
-      .from("fishes")
-      .update({ qr_code_url })
-      .eq("id", fish.id);
+    await supabase.from("fishes").update({ qr_code_url }).eq("id", fish.id);
 
     res.json({ success: true, item: { ...fish, qr_code_url } });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false });
   }
 });
 
-/* ---------------- UPDATE FISH ---------------- */
-router.post("/edit/:id", upload.single("image"), async (req, res) => {
+/* ---------------- UPDATE FISH (ADMIN) ---------------- */
+router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
   try {
     const update = { ...req.body };
 
@@ -92,23 +89,10 @@ router.post("/edit/:id", upload.single("image"), async (req, res) => {
       .single();
 
     if (error) throw error;
-
     res.json({ success: true, item: data });
-
   } catch {
     res.status(500).json({ success: false });
   }
-});
-
-/* ---------------- DELETE MULTIPLE ---------------- */
-router.delete("/", async (req, res) => {
-  const { ids } = req.body;
-  if (!Array.isArray(ids)) return res.status(400).json({ error: "Invalid ids" });
-
-  const { error } = await supabase.from("fishes").delete().in("id", ids);
-  if (error) return res.status(500).json({ error: "Delete failed" });
-
-  res.json({ success: true });
 });
 
 export default router;
