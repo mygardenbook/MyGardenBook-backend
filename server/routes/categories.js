@@ -2,11 +2,12 @@
 
 import express from "express";
 import supabase from "../db.js";
+import requireAdmin from "../middleware/requireAdmin.js";
 
 const router = express.Router();
 
 /* -------------------------------------------
-   GET ALL CATEGORIES
+   GET ALL CATEGORIES (PUBLIC)
 --------------------------------------------- */
 router.get("/", async (req, res) => {
   try {
@@ -16,7 +17,6 @@ router.get("/", async (req, res) => {
       .order("name", { ascending: true });
 
     if (error) throw error;
-
     res.json(data);
   } catch (err) {
     console.error("Categories fetch error:", err);
@@ -25,11 +25,11 @@ router.get("/", async (req, res) => {
 });
 
 /* -------------------------------------------
-   ADD CATEGORY
+   ADD CATEGORY (ADMIN)
 --------------------------------------------- */
-router.post("/", async (req, res) => {
+router.post("/", requireAdmin, async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, type } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: "Category name required" });
@@ -37,12 +37,11 @@ router.post("/", async (req, res) => {
 
     const { data, error } = await supabase
       .from("categories")
-      .insert([{ name: name.trim() }])
+      .insert([{ name: name.trim(), type }])
       .select()
       .single();
 
     if (error) throw error;
-
     res.status(201).json(data);
   } catch (err) {
     console.error("Category insert error:", err);
@@ -51,19 +50,16 @@ router.post("/", async (req, res) => {
 });
 
 /* -------------------------------------------
-   DELETE CATEGORY
+   DELETE CATEGORY (ADMIN)
 --------------------------------------------- */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireAdmin, async (req, res) => {
   try {
-    const { id } = req.params;
-
     const { error } = await supabase
       .from("categories")
       .delete()
-      .eq("id", id);
+      .eq("id", req.params.id);
 
     if (error) throw error;
-
     res.json({ success: true });
   } catch (err) {
     console.error("Category delete error:", err);
