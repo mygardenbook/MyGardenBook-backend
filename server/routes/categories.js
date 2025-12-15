@@ -21,7 +21,6 @@ router.get("/", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch categories" });
   }
 });
-
 /* ---------------- ADD CATEGORY (ADMIN) ---------------- */
 router.post("/", requireAdmin, async (req, res) => {
   try {
@@ -38,12 +37,14 @@ router.post("/", requireAdmin, async (req, res) => {
       .single();
 
     if (error) throw error;
+
     res.status(201).json(data);
   } catch (err) {
     console.error("Category insert error:", err);
     res.status(500).json({ error: "Failed to add category" });
   }
 });
+
 
 /* ---------------- DELETE CATEGORY (ADMIN) ---------------- */
 router.delete("/:id", requireAdmin, async (req, res) => {
