@@ -45,9 +45,7 @@ router.get("/:id", async (req, res) => {
 router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
   try {
     const { name, scientific_name, category, description } = req.body;
-    if (!name) {
-      return res.status(400).json({ error: "Fish name required" });
-    }
+    if (!name) return res.status(400).json({ error: "Fish name required" });
 
     let image_url = null;
 
@@ -88,7 +86,6 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
       success: true,
       fish: { ...fish, qr_code_url: qrUpload.secure_url }
     });
-
   } catch (err) {
     console.error("Add fish error:", err);
     res.status(500).json({ error: "Failed to add fish" });
@@ -99,6 +96,9 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
 router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
   try {
     const update = { ...req.body };
+    Object.keys(update).forEach(
+      key => update[key] === undefined && delete update[key]
+    );
 
     if (req.file) {
       const img = await cloudinary.uploader.upload(req.file.path, {
@@ -118,8 +118,8 @@ router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
     if (error) throw error;
 
     res.json({ success: true, fish });
-
-  } catch {
+  } catch (err) {
+    console.error("Update fish error:", err);
     res.status(500).json({ error: "Failed to update fish" });
   }
 });

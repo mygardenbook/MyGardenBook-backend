@@ -20,8 +20,7 @@ router.get("/", async (req, res) => {
 
     if (error) throw error;
     res.json(data);
-  } catch (err) {
-    console.error(err);
+  } catch {
     res.status(500).json({ error: "Failed to load plants" });
   }
 });
@@ -46,13 +45,10 @@ router.get("/:id", async (req, res) => {
 router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
   try {
     const { name, scientific_name, description, category } = req.body;
-    if (!name) {
-      return res.status(400).json({ error: "Plant name required" });
-    }
+    if (!name) return res.status(400).json({ error: "Plant name required" });
 
     let image_url = null;
 
-    // Upload image to Cloudinary
     if (req.file) {
       const img = await cloudinary.uploader.upload(req.file.path, {
         upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET
@@ -61,33 +57,26 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
       fs.unlinkSync(req.file.path);
     }
 
-    // Insert plant
     const { data: plant, error } = await supabase
       .from("plants")
-      .insert([
-        { name, scientific_name, description, category, image_url }
-      ])
+      .insert([{ name, scientific_name, description, category, image_url }])
       .select()
       .single();
 
     if (error) throw error;
 
-    // Safe frontend URL
     const frontendURL =
       process.env.FRONTEND_URL || "https://mygardenbook-frontend.vercel.app";
 
-    // Generate QR as buffer
     const qrBuffer = await QRCode.toBuffer(
       `${frontendURL}/PlantView.html?id=${plant.id}`
     );
 
-    // Upload QR to Cloudinary
     const qrUpload = await cloudinary.uploader.upload(
       `data:image/png;base64,${qrBuffer.toString("base64")}`,
       { folder: "mygardenbook/qr" }
     );
 
-    // Save QR URL
     await supabase
       .from("plants")
       .update({ qr_code_url: qrUpload.secure_url })
@@ -97,7 +86,6 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
       success: true,
       plant: { ...plant, qr_code_url: qrUpload.secure_url }
     });
-
   } catch (err) {
     console.error("Add plant error:", err);
     res.status(500).json({ error: "Failed to add plant" });
@@ -107,7 +95,12 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
 /* ---------------- UPDATE PLANT (ADMIN) ---------------- */
 router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
   try {
-    const update = { ...req.body };
+    const { name, scientific_name, description, category } = req.body;
+
+    const update = { name, scientific_name, description, category };
+    Object.keys(update).forEach(
+      key => update[key] === undefined && delete update[key]
+    );
 
     if (req.file) {
       const img = await cloudinary.uploader.upload(req.file.path, {
@@ -126,30 +119,8 @@ router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
 
     if (error) throw error;
 
-    // Ensure QR exists
-    if (!plant.qr_code_url) {
-      const frontendURL =
-        process.env.FRONTEND_URL || "https://mygardenbook-frontend.vercel.app";
-
-      const qrBuffer = await QRCode.toBuffer(
-        `${frontendURL}/PlantView.html?id=${plant.id}`
-      );
-
-      const qrUpload = await cloudinary.uploader.upload(
-        `data:image/png;base64,${qrBuffer.toString("base64")}`,
-        { folder: "mygardenbook/qr" }
-      );
-
-      await supabase
-        .from("plants")
-        .update({ qr_code_url: qrUpload.secure_url })
-        .eq("id", plant.id);
-
-      plant.qr_code_url = qrUpload.secure_url;
-    }
-
+    // ❗ QR IS NOT REGENERATED — SAME QR, UPDATED DATA
     res.json({ success: true, plant });
-
   } catch (err) {
     console.error("Update plant error:", err);
     res.status(500).json({ error: "Failed to update plant" });

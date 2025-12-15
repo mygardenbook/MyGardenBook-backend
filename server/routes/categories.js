@@ -16,49 +16,28 @@ router.get("/", async (req, res) => {
 
     if (error) throw error;
     res.json(data);
-  } catch (err) {
-    console.error("Categories fetch error:", err);
+  } catch {
     res.status(500).json({ error: "Failed to fetch categories" });
   }
 });
+
 /* ---------------- ADD CATEGORY (ADMIN) ---------------- */
 router.post("/", requireAdmin, async (req, res) => {
   try {
     const { name } = req.body;
-
-    if (!name || !name.trim()) {
+    if (!name?.trim()) {
       return res.status(400).json({ error: "Category name required" });
     }
 
-    const { data, error } = await supabase
-      .from("categories")
-      .insert([{ name: name.trim() }])
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    res.status(201).json(data);
-  } catch (err) {
-    console.error("Category insert error:", err);
-    res.status(500).json({ error: "Failed to add category" });
-  }
-});
-
-
-/* ---------------- DELETE CATEGORY (ADMIN) ---------------- */
-router.delete("/:id", requireAdmin, async (req, res) => {
-  try {
     const { error } = await supabase
       .from("categories")
-      .delete()
-      .eq("id", req.params.id);
+      .insert([{ name: name.trim() }]);
 
     if (error) throw error;
-    res.json({ success: true });
+
+    res.status(201).json({ success: true });
   } catch (err) {
-    console.error("Category delete error:", err);
-    res.status(500).json({ error: "Failed to delete category" });
+    res.status(409).json({ error: "Category already exists" });
   }
 });
 
