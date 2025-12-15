@@ -1,7 +1,6 @@
 // server/app.js
 
 import "dotenv/config";
-
 import express from "express";
 import cors from "cors";
 import fetch from "node-fetch";
@@ -15,7 +14,7 @@ import exportRoutes from "./routes/export.js";
 const app = express();
 
 /* -------------------------------------------
-   FIXED CORS CONFIGURATION FOR RENDER + VERCEL
+   CORS CONFIG (Render + Vercel + Local)
 --------------------------------------------- */
 
 const PROD_FRONTEND = process.env.FRONTEND_URL;
@@ -32,7 +31,9 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
+      // Allow server-to-server, Postman, curl
       if (!origin) return callback(null, true);
+
       if (allowedOrigins.includes(origin)) return callback(null, true);
       if (VERCEL_PREVIEW_REGEX.test(origin)) return callback(null, true);
 
@@ -44,14 +45,14 @@ app.use(
 );
 
 /* -------------------------------------------
-   EXPRESS MIDDLEWARE
+   MIDDLEWARE
 --------------------------------------------- */
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /* -------------------------------------------
-   AI ROUTE (Groq)
+   AI ROUTE (Groq) — FINAL FIX
 --------------------------------------------- */
 
 app.post("/api/ask-ai", async (req, res) => {
@@ -62,10 +63,9 @@ app.post("/api/ask-ai", async (req, res) => {
       return res.status(500).json({ error: "GROQ_API_KEY missing" });
     }
 
-    if (!question) {
+    if (!question || !question.trim()) {
       return res.status(400).json({ error: "Question is required" });
     }
-
 
     const groqRes = await fetch(
       "https://api.groq.com/openai/v1/chat/completions",
@@ -76,9 +76,15 @@ app.post("/api/ask-ai", async (req, res) => {
           Authorization: `Bearer ${process.env.GROQ_API_KEY}`
         },
         body: JSON.stringify({
-          model:"llama3-70b-8192",
+          // ✅ STABLE, SUPPORTED MODEL (DO NOT CHANGE)
+          model: "mixtral-8x7b-32768",
           messages: [
-            { role: "system", content: context || "" },
+            {
+              role: "system",
+              content:
+                context ||
+                "You are a helpful assistant for a gardening and aquarium application."
+            },
             { role: "user", content: question }
           ],
           temperature: 0.6
@@ -87,16 +93,31 @@ app.post("/api/ask-ai", async (req, res) => {
     );
 
     const json = await groqRes.json();
-    console.log("Groq raw response:", json);
 
+    console.log("===== GROQ DEBUG =====");
+    console.log("HTTP STATUS:", groqRes.status);
+    console.log("RESPONSE:", JSON.stringify(json, null, 2));
+    console.log("======================");
 
-    const answer =
-      json?.choices?.[0]?.message?.content ||
-      "AI did not return a response.";
+    if (!groqRes.ok || json.error) {
+      return res.status(500).json({
+        error: "Groq API error",
+        details: json.error || json
+      });
+    }
 
-    res.json({ answer });
+    if (!json.choices || !json.choices.length) {
+      return res.status(500).json({
+        error: "Groq returned no choices",
+        raw: json
+      });
+    }
+
+    res.json({
+      answer: json.choices[0].message.content
+    });
   } catch (err) {
-    console.error("AI error:", err);
+    console.error("AI route crash:", err);
     res.status(500).json({ error: "AI backend error" });
   }
 });
@@ -122,7 +143,7 @@ app.get("/", (req, res) => {
    SERVER START
 --------------------------------------------- */
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

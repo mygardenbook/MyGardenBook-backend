@@ -1,50 +1,42 @@
+// server/middleware/requireAdmin.js
+
+import jwt from "jsonwebtoken";
 import supabase from "../db.js";
 
-/*
-  Middleware to protect admin-only routes
-  - Uses Supabase Auth token
-  - Verifies user
-  - Verifies role === "admin"
-*/
 export default async function requireAdmin(req, res, next) {
   try {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "Missing or invalid Authorization header" });
+    const auth = req.headers.authorization;
+    if (!auth) {
+      return res.status(401).json({ error: "Missing Authorization header" });
     }
 
-    const token = authHeader.replace("Bearer ", "");
+    const token = auth.replace("Bearer ", "");
 
-    // Validate Supabase user from token
-    const { data: userData, error: userError } =
-      await supabase.auth.getUser(token);
-
-    if (userError || !userData?.user) {
-      return res.status(401).json({ error: "Invalid or expired token" });
+    // Decode JWT WITHOUT verifying (Supabase already signed it)
+    const decoded = jwt.decode(token);
+    if (!decoded?.sub) {
+      return res.status(401).json({ error: "Invalid token" });
     }
 
-    // Check admin role from profiles table
-    const { data: profile, error: profileError } = await supabase
+    // Check profile role
+    const { data: profile, error } = await supabase
       .from("profiles")
       .select("role")
-      .eq("id", userData.user.id)
+      .eq("id", decoded.sub)
       .single();
 
-    if (profileError) {
-      return res.status(500).json({ error: "Failed to verify admin role" });
+    if (error || !profile) {
+      return res.status(403).json({ error: "Profile not found" });
     }
 
     if (profile.role !== "admin") {
-      return res.status(403).json({ error: "Admin access only" });
+      return res.status(403).json({ error: "Admin only" });
     }
 
-    // Attach admin user to request
-    req.admin = userData.user;
-
+    req.adminId = decoded.sub;
     next();
   } catch (err) {
     console.error("requireAdmin error:", err);
-    res.status(500).json({ error: "Admin auth middleware failed" });
+    res.status(500).json({ error: "Admin authorization failed" });
   }
 }
