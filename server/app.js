@@ -77,7 +77,7 @@ app.post("/api/ask-ai", async (req, res) => {
         },
         body: JSON.stringify({
           // ✅ STABLE, SUPPORTED MODEL (DO NOT CHANGE)
-          model: "llama3-8b-8192",
+          model: "llama-3.1-8b-instant",
           messages: [
             {
               role: "system",
