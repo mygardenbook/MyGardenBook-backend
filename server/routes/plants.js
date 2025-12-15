@@ -1,3 +1,5 @@
+// server/routes/plants.js
+
 import express from "express";
 import upload from "../helpers/multer.js";
 import cloudinary from "../helpers/cloudinary.js";
@@ -18,7 +20,8 @@ router.get("/", async (req, res) => {
 
     if (error) throw error;
     res.json(data);
-  } catch {
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Failed to load plants" });
   }
 });
@@ -34,7 +37,7 @@ router.get("/:id", async (req, res) => {
 
     if (error) throw error;
     res.json(data);
-  } catch {
+  } catch (err) {
     res.status(404).json({ error: "Plant not found" });
   }
 });
@@ -42,8 +45,10 @@ router.get("/:id", async (req, res) => {
 /* ------------------ ADD PLANT (ADMIN) ------------------ */
 router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
   try {
-    const { name, description, category } = req.body;
-    if (!name) return res.status(400).json({ error: "Plant name required" });
+    const { name, description, category, scientific_name } = req.body;
+    if (!name) {
+      return res.status(400).json({ error: "Plant name required" });
+    }
 
     let image_url = null;
 
@@ -57,21 +62,43 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
 
     const { data: plant, error } = await supabase
       .from("plants")
-      .insert([{ name, description, category, image_url }])
+      .insert([
+        {
+          name,
+          scientific_name,
+          description,
+          category,
+          image_url
+        }
+      ])
       .select()
       .single();
 
     if (error) throw error;
 
+    // ✅ SAFE FRONTEND URL (never undefined)
+    const frontendURL =
+      process.env.FRONTEND_URL ||
+      "https://mygardenbook-frontend.vercel.app";
+
     const qr_code_url = await QRCode.toDataURL(
-      `${process.env.FRONTEND_URL}/PlantView.html?id=${plant.id}`
+      `${frontendURL}/PlantView.html?id=${plant.id}`
     );
 
-    await supabase.from("plants").update({ qr_code_url }).eq("id", plant.id);
+    await supabase
+      .from("plants")
+      .update({ qr_code_url })
+      .eq("id", plant.id);
 
-    res.json({ success: true, plant: { ...plant, qr_code_url } });
+    res.json({
+      success: true,
+      plant: {
+        ...plant,
+        qr_code_url
+      }
+    });
   } catch (err) {
-    console.error(err);
+    console.error("Add plant error:", err);
     res.status(500).json({ error: "Failed to add plant" });
   }
 });
@@ -89,7 +116,7 @@ router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
       fs.unlinkSync(req.file.path);
     }
 
-    const { data, error } = await supabase
+    const { data: plant, error } = await supabase
       .from("plants")
       .update(update)
       .eq("id", req.params.id)
@@ -97,8 +124,31 @@ router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
       .single();
 
     if (error) throw error;
-    res.json({ success: true, plant: data });
-  } catch {
+
+    // ✅ ENSURE QR EXISTS
+    if (!plant.qr_code_url) {
+      const frontendURL =
+        process.env.FRONTEND_URL ||
+        "https://mygardenbook-frontend.vercel.app";
+
+      const qr_code_url = await QRCode.toDataURL(
+        `${frontendURL}/PlantView.html?id=${plant.id}`
+      );
+
+      await supabase
+        .from("plants")
+        .update({ qr_code_url })
+        .eq("id", plant.id);
+
+      plant.qr_code_url = qr_code_url;
+    }
+
+    res.json({
+      success: true,
+      plant
+    });
+  } catch (err) {
+    console.error("Update plant error:", err);
     res.status(500).json({ error: "Failed to update plant" });
   }
 });

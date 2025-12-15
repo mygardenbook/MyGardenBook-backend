@@ -6,9 +6,7 @@ import requireAdmin from "../middleware/requireAdmin.js";
 
 const router = express.Router();
 
-/* -------------------------------------------
-   GET ALL CATEGORIES (PUBLIC)
---------------------------------------------- */
+/* ---------------- GET ALL CATEGORIES (PUBLIC) ---------------- */
 router.get("/", async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -24,12 +22,10 @@ router.get("/", async (req, res) => {
   }
 });
 
-/* -------------------------------------------
-   ADD CATEGORY (ADMIN)
---------------------------------------------- */
+/* ---------------- ADD CATEGORY (ADMIN) ---------------- */
 router.post("/", requireAdmin, async (req, res) => {
   try {
-    const { name, type } = req.body;
+    const { name } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: "Category name required" });
@@ -37,7 +33,7 @@ router.post("/", requireAdmin, async (req, res) => {
 
     const { data, error } = await supabase
       .from("categories")
-      .insert([{ name: name.trim(), type }])
+      .insert([{ name: name.trim() }])
       .select()
       .single();
 
@@ -49,9 +45,7 @@ router.post("/", requireAdmin, async (req, res) => {
   }
 });
 
-/* -------------------------------------------
-   DELETE CATEGORY (ADMIN)
---------------------------------------------- */
+/* ---------------- DELETE CATEGORY (ADMIN) ---------------- */
 router.delete("/:id", requireAdmin, async (req, res) => {
   try {
     const { error } = await supabase
