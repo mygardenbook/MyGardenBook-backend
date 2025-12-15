@@ -1,3 +1,5 @@
+// server/routes/fishes.js
+
 import express from "express";
 import upload from "../helpers/multer.js";
 import cloudinary from "../helpers/cloudinary.js";
@@ -18,8 +20,7 @@ router.get("/", async (req, res) => {
 
     if (error) throw error;
     res.json(data);
-  } catch (err) {
-    console.error(err);
+  } catch {
     res.status(500).json({ error: "Failed to load fishes" });
   }
 });
@@ -50,7 +51,6 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
 
     let image_url = null;
 
-    // Upload image to Cloudinary
     if (req.file) {
       const img = await cloudinary.uploader.upload(req.file.path, {
         upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET
@@ -59,32 +59,34 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
       fs.unlinkSync(req.file.path);
     }
 
-    // Insert fish into Supabase
     const { data: fish, error } = await supabase
       .from("fishes")
-      .insert([
-        { name, scientific_name, category, description, image_url }
-      ])
+      .insert([{ name, scientific_name, category, description, image_url }])
       .select()
       .single();
 
     if (error) throw error;
 
-    // Generate QR Code (Base64)
-    const qr_code_url = await QRCode.toDataURL(
-      `${process.env.FRONTEND_URL}/FishView.html?id=${fish.id}`
+    const frontendURL =
+      process.env.FRONTEND_URL || "https://mygardenbook-frontend.vercel.app";
+
+    const qrBuffer = await QRCode.toBuffer(
+      `${frontendURL}/FishView.html?id=${fish.id}`
     );
 
-    // Save QR to DB
+    const qrUpload = await cloudinary.uploader.upload(
+      `data:image/png;base64,${qrBuffer.toString("base64")}`,
+      { folder: "mygardenbook/qr" }
+    );
+
     await supabase
       .from("fishes")
-      .update({ qr_code_url })
+      .update({ qr_code_url: qrUpload.secure_url })
       .eq("id", fish.id);
 
-    // ✅ CONSISTENT RESPONSE KEY
     res.json({
       success: true,
-      fish: { ...fish, qr_code_url }
+      fish: { ...fish, qr_code_url: qrUpload.secure_url }
     });
 
   } catch (err) {
@@ -106,7 +108,7 @@ router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
       fs.unlinkSync(req.file.path);
     }
 
-    const { data, error } = await supabase
+    const { data: fish, error } = await supabase
       .from("fishes")
       .update(update)
       .eq("id", req.params.id)
@@ -115,13 +117,9 @@ router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
 
     if (error) throw error;
 
-    res.json({
-      success: true,
-      fish: data
-    });
+    res.json({ success: true, fish });
 
-  } catch (err) {
-    console.error("Update fish error:", err);
+  } catch {
     res.status(500).json({ error: "Failed to update fish" });
   }
 });
