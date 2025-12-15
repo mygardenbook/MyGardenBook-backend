@@ -58,9 +58,14 @@ app.post("/api/ask-ai", async (req, res) => {
   try {
     const { question, context } = req.body;
 
+    if (!process.env.GROQ_API_KEY) {
+      return res.status(500).json({ error: "GROQ_API_KEY missing" });
+    }
+
     if (!question) {
       return res.status(400).json({ error: "Question is required" });
     }
+
 
     const groqRes = await fetch(
       "https://api.groq.com/openai/v1/chat/completions",
@@ -71,7 +76,7 @@ app.post("/api/ask-ai", async (req, res) => {
           Authorization: `Bearer ${process.env.GROQ_API_KEY}`
         },
         body: JSON.stringify({
-          model: "mixtral-8x7b-32768",
+          model:"llama3-70b-8192",
           messages: [
             { role: "system", content: context || "" },
             { role: "user", content: question }
@@ -82,6 +87,8 @@ app.post("/api/ask-ai", async (req, res) => {
     );
 
     const json = await groqRes.json();
+    console.log("Groq raw response:", json);
+
 
     const answer =
       json?.choices?.[0]?.message?.content ||
