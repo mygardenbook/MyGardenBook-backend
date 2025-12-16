@@ -44,7 +44,7 @@ router.get("/:id", async (req, res) => {
 /* ---------------- ADD PLANT (ADMIN) ---------------- */
 router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
   try {
-    const { name, scientific_name, description, category } = req.body;
+    const { name, description, category } = req.body;
     if (!name) return res.status(400).json({ error: "Plant name required" });
 
     let image_url = null;
@@ -61,14 +61,15 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
 
     const { data: plant, error } = await supabase
       .from("plants")
-      .insert([{
-        name,
-        scientific_name,
-        description,
-        category: category || null,
-        image_url,
-        image_public_id
-      }])
+      .insert([
+        {
+          name,
+          description,
+          category: category || null,
+          image_url,
+          image_public_id
+        }
+      ])
       .select()
       .single();
 
@@ -99,7 +100,6 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
     }
 
     res.json({ success: true, plant });
-
   } catch (err) {
     console.error("Add plant error:", err);
     res.status(500).json({ error: "Failed to add plant" });
@@ -111,7 +111,6 @@ router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
   try {
     const update = {
       name: req.body.name,
-      scientific_name: req.body.scientific_name,
       description: req.body.description,
       category: req.body.category || null
     };

@@ -44,7 +44,7 @@ router.get("/:id", async (req, res) => {
 /* ---------------- ADD FISH (ADMIN) ---------------- */
 router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
   try {
-    const { name, scientific_name, category, description } = req.body;
+    const { name, category, description } = req.body;
     if (!name) return res.status(400).json({ error: "Fish name required" });
 
     let image_url = null;
@@ -61,7 +61,15 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
 
     const { data: fish, error } = await supabase
       .from("fish")
-      .insert([{ name, scientific_name, category, description, image_url, image_public_id }])
+      .insert([
+        {
+          name,
+          category,
+          description,
+          image_url,
+          image_public_id
+        }
+      ])
       .select()
       .single();
 
