@@ -10,18 +10,18 @@ import QRCode from "qrcode";
 
 const router = express.Router();
 
-/* ---------------- GET ALL FISHES (PUBLIC) ---------------- */
+/* ---------------- GET ALL FISH (PUBLIC) ---------------- */
 router.get("/", async (req, res) => {
   try {
     const { data, error } = await supabase
-      .from("fishes")
+      .from("fish")
       .select("*")
       .order("id", { ascending: false });
 
     if (error) throw error;
     res.json(data);
   } catch {
-    res.status(500).json({ error: "Failed to load fishes" });
+    res.status(500).json({ error: "Failed to load fish" });
   }
 });
 
@@ -29,7 +29,7 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const { data, error } = await supabase
-      .from("fishes")
+      .from("fish")
       .select("*")
       .eq("id", req.params.id)
       .single();
@@ -48,18 +48,20 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
     if (!name) return res.status(400).json({ error: "Fish name required" });
 
     let image_url = null;
+    let image_public_id = null;
 
     if (req.file) {
       const img = await cloudinary.uploader.upload(req.file.path, {
         upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET
       });
       image_url = img.secure_url;
+      image_public_id = img.public_id;
       fs.unlinkSync(req.file.path);
     }
 
     const { data: fish, error } = await supabase
-      .from("fishes")
-      .insert([{ name, scientific_name, category, description, image_url }])
+      .from("fish")
+      .insert([{ name, scientific_name, category, description, image_url, image_public_id }])
       .select()
       .single();
 
@@ -68,24 +70,23 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
     const frontendURL =
       process.env.FRONTEND_URL || "https://mygardenbook-frontend.vercel.app";
 
-    const qrBuffer = await QRCode.toBuffer(
+    const qrDataURL = await QRCode.toDataURL(
       `${frontendURL}/FishView.html?id=${fish.id}`
     );
 
-    const qrUpload = await cloudinary.uploader.upload(
-      `data:image/png;base64,${qrBuffer.toString("base64")}`,
-      { folder: "mygardenbook/qr" }
-    );
+    const qrUpload = await cloudinary.uploader.upload(qrDataURL, {
+      folder: "mygardenbook/qr"
+    });
 
     await supabase
-      .from("fishes")
-      .update({ qr_code_url: qrUpload.secure_url })
+      .from("fish")
+      .update({
+        qr_code_url: qrUpload.secure_url,
+        qr_public_id: qrUpload.public_id
+      })
       .eq("id", fish.id);
 
-    res.json({
-      success: true,
-      fish: { ...fish, qr_code_url: qrUpload.secure_url }
-    });
+    res.json({ success: true, fish });
   } catch (err) {
     console.error("Add fish error:", err);
     res.status(500).json({ error: "Failed to add fish" });
@@ -105,22 +106,52 @@ router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
         upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET
       });
       update.image_url = img.secure_url;
+      update.image_public_id = img.public_id;
       fs.unlinkSync(req.file.path);
     }
 
     const { data: fish, error } = await supabase
-      .from("fishes")
+      .from("fish")
       .update(update)
       .eq("id", req.params.id)
       .select()
       .single();
 
     if (error) throw error;
-
     res.json({ success: true, fish });
   } catch (err) {
     console.error("Update fish error:", err);
     res.status(500).json({ error: "Failed to update fish" });
+  }
+});
+
+/* ---------------- DELETE FISH (ADMIN) ---------------- */
+router.delete("/:id", requireAdmin, async (req, res) => {
+  try {
+    const { data: fish, error } = await supabase
+      .from("fish")
+      .select("image_public_id, qr_public_id")
+      .eq("id", req.params.id)
+      .single();
+
+    if (error || !fish) {
+      return res.status(404).json({ error: "Fish not found" });
+    }
+
+    if (fish.image_public_id) {
+      await cloudinary.uploader.destroy(fish.image_public_id);
+    }
+
+    if (fish.qr_public_id) {
+      await cloudinary.uploader.destroy(fish.qr_public_id);
+    }
+
+    await supabase.from("fish").delete().eq("id", req.params.id);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Delete fish error:", err);
+    res.status(500).json({ error: "Failed to delete fish" });
   }
 });
 

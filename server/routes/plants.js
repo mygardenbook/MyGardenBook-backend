@@ -48,44 +48,58 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
     if (!name) return res.status(400).json({ error: "Plant name required" });
 
     let image_url = null;
+    let image_public_id = null;
 
     if (req.file) {
       const img = await cloudinary.uploader.upload(req.file.path, {
         upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET
       });
       image_url = img.secure_url;
+      image_public_id = img.public_id;
       fs.unlinkSync(req.file.path);
     }
 
     const { data: plant, error } = await supabase
       .from("plants")
-      .insert([{ name, scientific_name, description, category, image_url }])
+      .insert([{
+        name,
+        scientific_name,
+        description,
+        category: category || null,
+        image_url,
+        image_public_id
+      }])
       .select()
       .single();
 
     if (error) throw error;
 
-    const frontendURL =
-      process.env.FRONTEND_URL || "https://mygardenbook-frontend.vercel.app";
+    // Generate QR (non-blocking)
+    try {
+      const frontendURL =
+        process.env.FRONTEND_URL || "https://mygardenbook-frontend.vercel.app";
 
-    const qrBuffer = await QRCode.toBuffer(
-      `${frontendURL}/PlantView.html?id=${plant.id}`
-    );
+      const qrDataURL = await QRCode.toDataURL(
+        `${frontendURL}/PlantView.html?id=${plant.id}`
+      );
 
-    const qrUpload = await cloudinary.uploader.upload(
-      `data:image/png;base64,${qrBuffer.toString("base64")}`,
-      { folder: "mygardenbook/qr" }
-    );
+      const qrUpload = await cloudinary.uploader.upload(qrDataURL, {
+        folder: "mygardenbook/qr"
+      });
 
-    await supabase
-      .from("plants")
-      .update({ qr_code_url: qrUpload.secure_url })
-      .eq("id", plant.id);
+      await supabase
+        .from("plants")
+        .update({
+          qr_code_url: qrUpload.secure_url,
+          qr_public_id: qrUpload.public_id
+        })
+        .eq("id", plant.id);
+    } catch (e) {
+      console.error("QR generation failed (non-fatal):", e);
+    }
 
-    res.json({
-      success: true,
-      plant: { ...plant, qr_code_url: qrUpload.secure_url }
-    });
+    res.json({ success: true, plant });
+
   } catch (err) {
     console.error("Add plant error:", err);
     res.status(500).json({ error: "Failed to add plant" });
@@ -95,9 +109,13 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
 /* ---------------- UPDATE PLANT (ADMIN) ---------------- */
 router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
   try {
-    const { name, scientific_name, description, category } = req.body;
+    const update = {
+      name: req.body.name,
+      scientific_name: req.body.scientific_name,
+      description: req.body.description,
+      category: req.body.category || null
+    };
 
-    const update = { name, scientific_name, description, category };
     Object.keys(update).forEach(
       key => update[key] === undefined && delete update[key]
     );
@@ -107,6 +125,7 @@ router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
         upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET
       });
       update.image_url = img.secure_url;
+      update.image_public_id = img.public_id;
       fs.unlinkSync(req.file.path);
     }
 
@@ -119,11 +138,40 @@ router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
 
     if (error) throw error;
 
-    // ❗ QR IS NOT REGENERATED — SAME QR, UPDATED DATA
     res.json({ success: true, plant });
   } catch (err) {
     console.error("Update plant error:", err);
     res.status(500).json({ error: "Failed to update plant" });
+  }
+});
+
+/* ---------------- DELETE PLANT (ADMIN) ---------------- */
+router.delete("/:id", requireAdmin, async (req, res) => {
+  try {
+    const { data: plant, error } = await supabase
+      .from("plants")
+      .select("image_public_id, qr_public_id")
+      .eq("id", req.params.id)
+      .single();
+
+    if (error || !plant) {
+      return res.status(404).json({ error: "Plant not found" });
+    }
+
+    if (plant.image_public_id) {
+      await cloudinary.uploader.destroy(plant.image_public_id);
+    }
+
+    if (plant.qr_public_id) {
+      await cloudinary.uploader.destroy(plant.qr_public_id);
+    }
+
+    await supabase.from("plants").delete().eq("id", req.params.id);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Delete plant error:", err);
+    res.status(500).json({ error: "Failed to delete plant" });
   }
 });
 
