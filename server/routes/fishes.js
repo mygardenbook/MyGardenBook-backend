@@ -44,7 +44,7 @@ router.get("/:id", async (req, res) => {
 /* ---------------- ADD FISH (ADMIN) ---------------- */
 router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
   try {
-    const { name, category, description } = req.body;
+    const { name, category, description, scientific_name } = req.body;
     if (!name) return res.status(400).json({ error: "Fish name required" });
 
     let image_url = null;
@@ -64,7 +64,8 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
       .insert([
         {
           name,
-          category,
+          scientific_name: scientific_name || null,
+          category: category || null,
           description,
           image_url,
           image_public_id
@@ -104,7 +105,13 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
 /* ---------------- UPDATE FISH (ADMIN) ---------------- */
 router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
   try {
-    const update = { ...req.body };
+    const update = {
+      name: req.body.name,
+      scientific_name: req.body.scientific_name,
+      category: req.body.category || null,
+      description: req.body.description
+    };
+
     Object.keys(update).forEach(
       key => update[key] === undefined && delete update[key]
     );

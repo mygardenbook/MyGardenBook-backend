@@ -44,7 +44,7 @@ router.get("/:id", async (req, res) => {
 /* ---------------- ADD PLANT (ADMIN) ---------------- */
 router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
   try {
-    const { name, description, category } = req.body;
+    const { name, description, category, scientific_name } = req.body;
     if (!name) return res.status(400).json({ error: "Plant name required" });
 
     let image_url = null;
@@ -64,6 +64,7 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
       .insert([
         {
           name,
+          scientific_name: scientific_name || null,
           description,
           category: category || null,
           image_url,
@@ -111,6 +112,7 @@ router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
   try {
     const update = {
       name: req.body.name,
+      scientific_name: req.body.scientific_name,
       description: req.body.description,
       category: req.body.category || null
     };
