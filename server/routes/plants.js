@@ -77,28 +77,26 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
     if (error) throw error;
 
     // Generate QR (non-blocking)
-    try {
-      const frontendURL =
-        process.env.FRONTEND_URL || "https://mygardenbook-frontend.vercel.app";
+    const frontendURL =
+  process.env.FRONTEND_URL || "https://mygardenbook-frontend.vercel.app";
 
-      const qrDataURL = await QRCode.toDataURL(
-        `${frontendURL}/PlantView.html?id=${plant.id}`
-      );
+// 🔒 BLOCK until QR is fully ready
+const qrDataURL = await QRCode.toDataURL(
+  `${frontendURL}/PlantView.html?id=${plant.id}`
+);
 
-      const qrUpload = await cloudinary.uploader.upload(qrDataURL, {
-        folder: "mygardenbook/qr"
-      });
+const qrUpload = await cloudinary.uploader.upload(qrDataURL, {
+  folder: "mygardenbook/qr"
+});
 
-      await supabase
-        .from("plants")
-        .update({
-          qr_code_url: qrUpload.secure_url,
-          qr_public_id: qrUpload.public_id
-        })
-        .eq("id", plant.id);
-    } catch (e) {
-      console.error("QR generation failed (non-fatal):", e);
-    }
+await supabase
+  .from("plants")
+  .update({
+    qr_code_url: qrUpload.secure_url,
+    qr_public_id: qrUpload.public_id
+  })
+  .eq("id", plant.id);
+
 
     const { data: updatedPlant } = await supabase
   .from("plants")
