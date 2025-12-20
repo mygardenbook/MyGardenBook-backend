@@ -100,7 +100,14 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
       console.error("QR generation failed (non-fatal):", e);
     }
 
-    res.json({ success: true, plant });
+    const { data: updatedPlant } = await supabase
+  .from("plants")
+  .select("*")
+  .eq("id", plant.id)
+  .single();
+
+res.json({ success: true, plant: updatedPlant });
+
   } catch (err) {
     console.error("Add plant error:", err);
     res.status(500).json({ error: "Failed to add plant" });

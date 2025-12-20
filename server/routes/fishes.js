@@ -95,8 +95,15 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
       })
       .eq("id", fish.id);
 
-    res.json({ success: true, fish });
-  } catch (err) {
+const { data: updatedFish } = await supabase
+  .from("fish")
+  .select("*")
+  .eq("id", fish.id)
+  .single();
+
+res.json({ success: true, fish: updatedFish });
+
+} catch (err) {
     console.error("Add fish error:", err);
     res.status(500).json({ error: "Failed to add fish" });
   }
