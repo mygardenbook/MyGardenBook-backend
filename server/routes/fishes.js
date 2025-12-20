@@ -170,22 +170,31 @@ router.delete("/:id", requireAdmin, async (req, res) => {
       return res.status(404).json({ error: "Fish not found" });
     }
 
+    // 🔥 DELETE FISH IMAGE
     if (fish.image_public_id) {
-      await cloudinary.uploader.destroy(fish.image_public_id);
+      await cloudinary.uploader.destroy(fish.image_public_id, {
+        resource_type: "image",
+        invalidate: true
+      });
     }
 
+    // 🔥 DELETE QR IMAGE
     if (fish.qr_public_id) {
-      await cloudinary.uploader.destroy(fish.qr_public_id);
+      await cloudinary.uploader.destroy(fish.qr_public_id, {
+        resource_type: "image",
+        invalidate: true
+      });
     }
 
+    // 🔥 DELETE DB ROW
     await supabase.from("fish").delete().eq("id", req.params.id);
 
     res.json({ success: true });
-
   } catch (err) {
     console.error("Delete fish error:", err);
     res.status(500).json({ error: "Failed to delete fish" });
   }
 });
+
 
 export default router;

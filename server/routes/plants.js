@@ -184,14 +184,23 @@ router.delete("/:id", requireAdmin, async (req, res) => {
       return res.status(404).json({ error: "Plant not found" });
     }
 
+    // 🔥 DELETE PLANT IMAGE
     if (plant.image_public_id) {
-      await cloudinary.uploader.destroy(plant.image_public_id);
+      await cloudinary.uploader.destroy(plant.image_public_id, {
+        resource_type: "image",
+        invalidate: true
+      });
     }
 
+    // 🔥 DELETE QR IMAGE
     if (plant.qr_public_id) {
-      await cloudinary.uploader.destroy(plant.qr_public_id);
+      await cloudinary.uploader.destroy(plant.qr_public_id, {
+        resource_type: "image",
+        invalidate: true
+      });
     }
 
+    // 🔥 DELETE DB ROW
     await supabase.from("plants").delete().eq("id", req.params.id);
 
     res.json({ success: true });
@@ -200,5 +209,6 @@ router.delete("/:id", requireAdmin, async (req, res) => {
     res.status(500).json({ error: "Failed to delete plant" });
   }
 });
+
 
 export default router;
