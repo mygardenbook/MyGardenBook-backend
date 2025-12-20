@@ -35,6 +35,10 @@ router.get("/:id", async (req, res) => {
       .single();
 
     if (error) throw error;
+
+    // 🔴 CRITICAL FIX — prevent browser / CDN caching
+    res.setHeader("Cache-Control", "no-store");
+
     res.json(data);
   } catch {
     res.status(404).json({ error: "Fish not found" });
@@ -59,6 +63,7 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
       fs.unlinkSync(req.file.path);
     }
 
+    // 1️⃣ Insert fish
     const { data: fish, error } = await supabase
       .from("fish")
       .insert([
@@ -76,7 +81,7 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
 
     if (error) throw error;
 
-    /* -------- QR GENERATION (SAME AS PLANTS) -------- */
+    // 2️⃣ Generate QR (BLOCKING — REQUIRED)
     const frontendURL =
       process.env.FRONTEND_URL || "https://mygardenbook-frontend.vercel.app";
 
@@ -88,6 +93,7 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
       folder: "mygardenbook/qr"
     });
 
+    // 3️⃣ Update fish with QR
     await supabase
       .from("fish")
       .update({
@@ -96,13 +102,14 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
       })
       .eq("id", fish.id);
 
-    /* 🔁 RE-FETCH UPDATED ROW (CRITICAL FIX) */
+    // 4️⃣ Fetch updated fish (WITH QR)
     const { data: updatedFish } = await supabase
       .from("fish")
       .select("*")
       .eq("id", fish.id)
       .single();
 
+    // 5️⃣ Respond once (frontend gets QR instantly)
     res.json({ success: true, fish: updatedFish });
 
   } catch (err) {
