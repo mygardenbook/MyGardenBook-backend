@@ -35,6 +35,10 @@ router.get("/:id", async (req, res) => {
       .single();
 
     if (error) throw error;
+
+    // 🔴 CRITICAL FIX — prevent browser / Vercel caching
+    res.setHeader("Cache-Control", "no-store");
+
     res.json(data);
   } catch {
     res.status(404).json({ error: "Plant not found" });
@@ -80,17 +84,28 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
     if (error) throw error;
 
     // 2️⃣ Generate QR (BLOCKING — REQUIRED)
-    const frontendURL =
-      process.env.FRONTEND_URL ||
-      "https://mygardenbook-frontend.vercel.app";
+   console.log("🟢 STEP 1: Starting QR generation");
+console.log("FRONTEND_URL =", process.env.FRONTEND_URL);
 
-    const qrDataURL = await QRCode.toDataURL(
-      `${frontendURL}/PlantView.html?id=${plant.id}`
-    );
+const frontendURL =
+  process.env.FRONTEND_URL ||
+  "https://mygardenbook-frontend.vercel.app";
 
-    const qrUpload = await cloudinary.uploader.upload(qrDataURL, {
-      folder: "mygardenbook/qr"
-    });
+console.log("🟢 STEP 2: Using frontend URL:", frontendURL);
+
+const qrDataURL = await QRCode.toDataURL(
+  `${frontendURL}/PlantView.html?id=${plant.id}`
+);
+
+console.log("🟢 STEP 3: QR data URL generated");
+
+const qrUpload = await cloudinary.uploader.upload(qrDataURL, {
+  folder: "mygardenbook/qr"
+});
+
+console.log("🟢 STEP 4: QR uploaded to Cloudinary");
+console.log("QR URL:", qrUpload.secure_url);
+
 
     // 3️⃣ Update plant with QR
     await supabase
