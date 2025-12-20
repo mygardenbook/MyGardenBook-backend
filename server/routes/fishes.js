@@ -76,6 +76,7 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
 
     if (error) throw error;
 
+    /* -------- QR GENERATION (SAME AS PLANTS) -------- */
     const frontendURL =
       process.env.FRONTEND_URL || "https://mygardenbook-frontend.vercel.app";
 
@@ -95,15 +96,16 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
       })
       .eq("id", fish.id);
 
-const { data: updatedFish } = await supabase
-  .from("fish")
-  .select("*")
-  .eq("id", fish.id)
-  .single();
+    /* 🔁 RE-FETCH UPDATED ROW (CRITICAL FIX) */
+    const { data: updatedFish } = await supabase
+      .from("fish")
+      .select("*")
+      .eq("id", fish.id)
+      .single();
 
-res.json({ success: true, fish: updatedFish });
+    res.json({ success: true, fish: updatedFish });
 
-} catch (err) {
+  } catch (err) {
     console.error("Add fish error:", err);
     res.status(500).json({ error: "Failed to add fish" });
   }
@@ -141,6 +143,7 @@ router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
 
     if (error) throw error;
     res.json({ success: true, fish });
+
   } catch (err) {
     console.error("Update fish error:", err);
     res.status(500).json({ error: "Failed to update fish" });
@@ -171,6 +174,7 @@ router.delete("/:id", requireAdmin, async (req, res) => {
     await supabase.from("fish").delete().eq("id", req.params.id);
 
     res.json({ success: true });
+
   } catch (err) {
     console.error("Delete fish error:", err);
     res.status(500).json({ error: "Failed to delete fish" });

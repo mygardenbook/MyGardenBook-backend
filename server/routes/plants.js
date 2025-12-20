@@ -45,7 +45,9 @@ router.get("/:id", async (req, res) => {
 router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
   try {
     const { name, description, category, scientific_name } = req.body;
-    if (!name) return res.status(400).json({ error: "Plant name required" });
+    if (!name) {
+      return res.status(400).json({ error: "Plant name required" });
+    }
 
     let image_url = null;
     let image_public_id = null;
@@ -59,6 +61,7 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
       fs.unlinkSync(req.file.path);
     }
 
+    // 1️⃣ Insert plant
     const { data: plant, error } = await supabase
       .from("plants")
       .insert([
@@ -76,35 +79,37 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
 
     if (error) throw error;
 
-    // Generate QR (non-blocking)
+    // 2️⃣ Generate QR (BLOCKING — REQUIRED)
     const frontendURL =
-  process.env.FRONTEND_URL || "https://mygardenbook-frontend.vercel.app";
+      process.env.FRONTEND_URL ||
+      "https://mygardenbook-frontend.vercel.app";
 
-// 🔒 BLOCK until QR is fully ready
-const qrDataURL = await QRCode.toDataURL(
-  `${frontendURL}/PlantView.html?id=${plant.id}`
-);
+    const qrDataURL = await QRCode.toDataURL(
+      `${frontendURL}/PlantView.html?id=${plant.id}`
+    );
 
-const qrUpload = await cloudinary.uploader.upload(qrDataURL, {
-  folder: "mygardenbook/qr"
-});
+    const qrUpload = await cloudinary.uploader.upload(qrDataURL, {
+      folder: "mygardenbook/qr"
+    });
 
-await supabase
-  .from("plants")
-  .update({
-    qr_code_url: qrUpload.secure_url,
-    qr_public_id: qrUpload.public_id
-  })
-  .eq("id", plant.id);
+    // 3️⃣ Update plant with QR
+    await supabase
+      .from("plants")
+      .update({
+        qr_code_url: qrUpload.secure_url,
+        qr_public_id: qrUpload.public_id
+      })
+      .eq("id", plant.id);
 
-
+    // 4️⃣ Fetch updated plant (WITH QR)
     const { data: updatedPlant } = await supabase
-  .from("plants")
-  .select("*")
-  .eq("id", plant.id)
-  .single();
+      .from("plants")
+      .select("*")
+      .eq("id", plant.id)
+      .single();
 
-res.json({ success: true, plant: updatedPlant });
+    // 5️⃣ Respond ONCE (frontend gets QR immediately)
+    res.json({ success: true, plant: updatedPlant });
 
   } catch (err) {
     console.error("Add plant error:", err);
